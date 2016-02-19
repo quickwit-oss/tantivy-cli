@@ -1,0 +1,9 @@
+[package]
+name = "tantivy-cli"
+version = "0.1.0"
+authors = ["Paul Masurel <paul.masurel@gmail.com>"]
+
+
+[dependencies]
+tantivy = { path = "/home/pmasurel/github/tantivy" }
+time = "0.1.34"
