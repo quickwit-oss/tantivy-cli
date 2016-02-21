@@ -5,5 +5,5 @@ authors = ["Paul Masurel <paul.masurel@gmail.com>"]
 
 
 [dependencies]
-tantivy = { path = "/home/pmasurel/github/tantivy" }
+tantivy = { path = "../tantivy" }
 time = "0.1.34"

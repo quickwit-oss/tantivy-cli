@@ -21,7 +21,7 @@ use std::convert::From;
 use std::path::PathBuf;
 use tantivy::core::query;
 use tantivy::core::query::parse_query;
-use tantivy::core::analyzer::SimpleTokenizer;
+use tantivy::core::analyzer::*;
 use std::borrow::Borrow;
 use std::io::BufRead;
 use std::fs;
@@ -47,7 +47,7 @@ fn main() {
     let url_field = schema.add_field("url", &str_fieldtype);
     let title_field = schema.add_field("title", &text_fieldtype);
     let body_field = schema.add_field("body", &text_fieldtype);
-    let mut directory = Directory::open(&PathBuf::from("/media/ssd/wikiindex")).unwrap();
+    let mut directory = Directory::open(&PathBuf::from("/data/wiki-index/")).unwrap();
     directory.set_schema(&schema);
     let searcher = Searcher::for_directory(directory);
     let tokenizer = SimpleTokenizer::new();
@@ -63,8 +63,13 @@ fn main() {
         let mut terms: Vec<Term> = Vec::new();
         let mut token_it = tokenizer.tokenize(&input);
         let mut term_buffer = String::new();
-        while token_it.read_one(&mut term_buffer) {
-            terms.push(Term::from_field_text(&body_field, &term_buffer));
+        loop {
+            match token_it.next() {
+                Some(token) => {
+                    terms.push(Term::from_field_text(&body_field, &token));
+                }
+                None => { break; }
+            }
         }
         // let terms = keywords.iter().map(|s| Term::from_field_text(&body_field, &s));
         println!("Input: {:?}", input);
