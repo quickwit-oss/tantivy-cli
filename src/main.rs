@@ -1,68 +1,64 @@
 extern crate tantivy;
 extern crate time;
 
-use std::fs::File;
-use std::io::BufReader;
-use std::io::Read;
-use tantivy::core::postings::VecPostings;
-use tantivy::core::postings::Postings;
-use tantivy::core::collector::TestCollector;
-use tantivy::core::serial::*;
+use tantivy::core::collector::{CountCollector, FirstNCollector, MultiCollector};
 use tantivy::core::schema::*;
-use tantivy::core::codec::SimpleCodec;
-use tantivy::core::global::*;
 use tantivy::core::searcher::Searcher;
-use tantivy::core::directory::{Directory, generate_segment_name, SegmentId};
-use std::ops::DerefMut;
-use tantivy::core::reader::SegmentReader;
-use std::io::{ BufWriter, Write};
+use tantivy::core::directory::Directory;
 use std::io;
 use std::convert::From;
 use std::path::PathBuf;
-use tantivy::core::query;
-use tantivy::core::query::parse_query;
 use tantivy::core::analyzer::*;
-use std::borrow::Borrow;
 use std::io::BufRead;
-use std::fs;
-use std::io::Cursor;
 use time::PreciseTime;
 
-fn count_docs(searcher: &Searcher, terms: &Vec<Term>) -> usize {
-    // let terms = vec!(, Term::from_field_text(&body_field, "france"));
-    let mut collector = TestCollector::new();
-    searcher.search(&terms, &mut collector);
-    let mut num_docs = 0;
-    for doc_id in collector.docs().iter() {
-        num_docs += 1;
+fn handle_query(searcher: &Searcher, terms: &Vec<Term>, print_fields: &Vec<Field>) -> usize {
+    // let mut collector = TestCollector::new();
+    let mut count_collector = CountCollector::new();
+    let mut first_3_collector = FirstNCollector::with_limit(3);
+    {
+        let mut multi_collector = MultiCollector::from(vec!(&mut count_collector, &mut first_3_collector));
+        searcher.search(&terms, &mut multi_collector);
     }
-    num_docs
+    let mut num_docs = 0;
+    for doc_address in first_3_collector.docs().iter() {
+        let doc = searcher.get_doc(doc_address);
+        for print_field in print_fields.iter() {
+            for txt in doc.get(print_field) {
+                println!("  - txt: {:?}", txt);
+            }
+        }
+    }
+    count_collector.count()
 }
 
 fn main() {
     let str_fieldtype = FieldOptions::new();
     let text_fieldtype = FieldOptions::new().set_tokenized_indexed();
     let mut schema = Schema::new();
-    let id_field = schema.add_field("id", &str_fieldtype);
+
+
     let url_field = schema.add_field("url", &str_fieldtype);
     let title_field = schema.add_field("title", &text_fieldtype);
     let body_field = schema.add_field("body", &text_fieldtype);
+    let print_fields = vec!(title_field, url_field);
+
     let mut directory = Directory::open(&PathBuf::from("/data/wiki-index/")).unwrap();
     directory.set_schema(&schema);
     let searcher = Searcher::for_directory(directory);
     let tokenizer = SimpleTokenizer::new();
 
-    let mut stdin = io::stdin();
-    'mainloop: loop {
+    println!("Ready");
+    let stdin = io::stdin();
+    loop {
         let mut input = String::new();
         print!("> ");
         stdin.read_line(&mut input);
         if input == "exit\n" {
-            break 'mainloop;
+            break;
         }
         let mut terms: Vec<Term> = Vec::new();
         let mut token_it = tokenizer.tokenize(&input);
-        let mut term_buffer = String::new();
         loop {
             match token_it.next() {
                 Some(token) => {
@@ -71,13 +67,12 @@ fn main() {
                 None => { break; }
             }
         }
-        // let terms = keywords.iter().map(|s| Term::from_field_text(&body_field, &s));
         println!("Input: {:?}", input);
         println!("Keywords {:?}", terms);
         let start = PreciseTime::now();
-        let num_docs = count_docs(&searcher, &terms);
+        let num_docs = handle_query(&searcher, &terms, &print_fields);
         let stop = PreciseTime::now();
-        println!("Elasped time {:?}", start.to(stop));
+        println!("Elasped time {:?} microseconds", start.to(stop).num_microseconds().unwrap());
         println!("Num_docs {:?}", num_docs);
     }
 
