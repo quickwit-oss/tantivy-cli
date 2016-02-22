@@ -13,7 +13,6 @@ use std::io::BufRead;
 use time::PreciseTime;
 
 fn handle_query(searcher: &Searcher, terms: &Vec<Term>, print_fields: &Vec<Field>) -> usize {
-    // let mut collector = TestCollector::new();
     let mut count_collector = CountCollector::new();
     let mut first_3_collector = FirstNCollector::with_limit(3);
     {
@@ -33,18 +32,14 @@ fn handle_query(searcher: &Searcher, terms: &Vec<Term>, print_fields: &Vec<Field
 }
 
 fn main() {
-    let str_fieldtype = FieldOptions::new();
-    let text_fieldtype = FieldOptions::new().set_tokenized_indexed();
-    let mut schema = Schema::new();
-
-
-    let url_field = schema.add_field("url", &str_fieldtype);
-    let title_field = schema.add_field("title", &text_fieldtype);
-    let body_field = schema.add_field("body", &text_fieldtype);
+    let directory = Directory::open(&PathBuf::from("/data/wiki-index/")).unwrap();
+    let schema = directory.schema();
+    let url_field = schema.field("url").unwrap();
+    let title_field = schema.field("title").unwrap();
+    let body_field = schema.field("body").unwrap();
     let print_fields = vec!(title_field, url_field);
 
     let mut directory = Directory::open(&PathBuf::from("/data/wiki-index/")).unwrap();
-    directory.set_schema(&schema);
     let searcher = Searcher::for_directory(directory);
     let tokenizer = SimpleTokenizer::new();
 
