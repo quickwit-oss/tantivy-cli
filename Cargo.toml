@@ -7,3 +7,9 @@ authors = ["Paul Masurel <paul.masurel@gmail.com>"]
 [dependencies]
 tantivy = { path = "../tantivy" }
 time = "0.1.34"
+iron = "0.3.0"
+staticfile = "*"
+mount= "*"
+
+[dependencies.urlencoded]
+version = "*"
