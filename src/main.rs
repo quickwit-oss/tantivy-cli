@@ -13,6 +13,7 @@ use tantivy::collector::{CountCollector, MultiCollector};
 use tantivy::Index;
 use std::convert::From;
 use time::PreciseTime;
+use tantivy::collector::chain;
 use urlencoded::UrlEncodedQuery;
 use iron::status;
 use rustc_serialize::json::as_pretty_json;
@@ -116,12 +117,16 @@ fn search(req: &mut Request) -> IronResult<Response> {
                     let parsed_query = INDEX_SERVER.query_parser.parse_query(&query).unwrap();
                     let search_timing = TimingStarted::new("search");
                     let searcher = INDEX_SERVER.index.searcher().unwrap();
+
                     let mut count_collector = CountCollector::new();
                     let mut top_collector = TopCollector::with_limit(10);
 
                     {
-                        let mut multi_collector = MultiCollector::from(vec!(&mut count_collector, &mut top_collector));
-                        let timings = parsed_query.search(&searcher, &mut multi_collector).unwrap();
+                        // let mut multi_collector = MultiCollector::from(vec!(&mut count_collector, &mut top_collector));
+                        let mut chained_collector = chain()
+                                .add(&mut top_collector)
+                                .add(&mut count_collector);
+                        let timings = parsed_query.search(&searcher, &mut chained_collector).unwrap();
                         println!("{:?}", timings);
                     }
                     timings.push(search_timing.stop());
