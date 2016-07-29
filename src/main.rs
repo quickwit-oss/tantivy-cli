@@ -8,20 +8,22 @@ extern crate iron;
 extern crate staticfile;
 extern crate mount;
 
-use tantivy::collector::{CountCollector, FirstNCollector, MultiCollector};
-use tantivy::schema::{TextField, Term};
+use tantivy::schema::Field;
+use tantivy::collector::{CountCollector, MultiCollector};
 use tantivy::Index;
 use std::convert::From;
 use time::PreciseTime;
 use urlencoded::UrlEncodedQuery;
-use tantivy::analyzer::SimpleTokenizer;
 use iron::status;
-use tantivy::analyzer::StreamingIterator;
 use rustc_serialize::json::as_pretty_json;
 use std::path::Path;
 use staticfile::Static;
 use iron::mime::Mime;
 use mount::Mount;
+use tantivy::query::Query;
+use tantivy::query::QueryParser;
+use tantivy::Document;
+use tantivy::collector::TopCollector;
 use iron::prelude::*;
 
 #[derive(RustcDecodable, RustcEncodable)]
@@ -39,26 +41,41 @@ struct Hit {
 }
 
 lazy_static! {
-    static ref INDEX: Index = {
-        Index::open(&Path::new("/Users/pmasurel/wiki-index/")).unwrap()
+    static ref INDEX_SERVER: IndexServer = {
+        IndexServer::load(&Path::new("/Users/pmasurel/wiki-index/"))
     };
 }
 
-fn parse_query(q: &String, field: &TextField) -> Vec<Term> {
-    let tokenizer = SimpleTokenizer::new();
-    let mut token_it = tokenizer.tokenize(&q);
-    let mut terms = Vec::new();
-    loop {
-        match token_it.next() {
-            Some(token) => {
-                terms.push(Term::from_field_text(field, &token));
-            }
-            None => { break; }
-        }
-    }
-    terms
+struct IndexServer {
+    index: Index,
+    query_parser: QueryParser,
+    body_field: Field,
+    title_field: Field,
 }
 
+impl IndexServer {
+    fn load(path: &Path) -> IndexServer {
+        let index = Index::open(path).unwrap();
+        let schema = index.schema();
+        let body_field = schema.get_field("body").unwrap();
+        let title_field = schema.get_field("title").unwrap();
+        let query_parser = QueryParser::new(schema, body_field);
+        IndexServer {
+            index: index,
+            query_parser: query_parser,
+            title_field: title_field,
+            body_field: body_field,
+        }
+    }
+
+    fn create_hit(&self, doc: &Document) -> Hit {
+        Hit {
+            title: String::from(doc.get_first(self.title_field).unwrap().text()),
+            body: String::from(doc.get_first(self.body_field).unwrap().text().clone()),
+
+        }
+    }
+}
 
 struct TimingStarted {
     name: String,
@@ -96,30 +113,27 @@ fn search(req: &mut Request) -> IronResult<Response> {
             match qs_map.get("q") {
                 Some(qs) => {
                     let query = qs[0].clone();
+                    let parsed_query = INDEX_SERVER.query_parser.parse_query(&query).unwrap();
                     let search_timing = TimingStarted::new("search");
-                    let searcher = INDEX.searcher().unwrap();
-                    let schema = INDEX.schema();
-                    let title_field = schema.text_field("title");
-                    let body_field = schema.text_field("body");
-                    let terms = parse_query(&query, &body_field);
+                    let searcher = INDEX_SERVER.index.searcher().unwrap();
                     let mut count_collector = CountCollector::new();
-                    let mut first_collector = FirstNCollector::with_limit(10);
+                    let mut top_collector = TopCollector::with_limit(10);
+
                     {
-                        let mut multi_collector = MultiCollector::from(vec!(&mut count_collector, &mut first_collector));
-                        let timings = searcher.search(&terms, &mut multi_collector).unwrap();
+                        let mut multi_collector = MultiCollector::from(vec!(&mut count_collector, &mut top_collector));
+                        let timings = parsed_query.search(&searcher, &mut multi_collector).unwrap();
                         println!("{:?}", timings);
                     }
                     timings.push(search_timing.stop());
                     let storage_timing = TimingStarted::new("store");
-                    let hits: Vec<Hit> = first_collector
+                    for scored_doc in top_collector.score_docs() {
+                        println!("{:?}", scored_doc);
+                    }
+                    let hits: Vec<Hit> = top_collector
                         .docs()
                         .iter()
                         .map(|doc_address| searcher.doc(doc_address).unwrap())
-                        .map(|doc|
-                            Hit {
-                                title: doc.get_first_text(&title_field).unwrap().clone(),
-                                body: doc.get_first_text(&body_field).unwrap().clone(),
-                        })
+                        .map(|doc|INDEX_SERVER.create_hit(&doc) )
                         .collect();
                     timings.push(storage_timing.stop());
                     let response = Serp {
