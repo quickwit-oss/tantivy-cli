@@ -9,11 +9,11 @@ extern crate staticfile;
 extern crate mount;
 
 use tantivy::schema::Field;
-use tantivy::collector::{CountCollector, MultiCollector};
+use tantivy::collector::CountCollector;
 use tantivy::Index;
 use std::convert::From;
 use time::PreciseTime;
-use tantivy::collector::chain;
+use tantivy::collector;
 use urlencoded::UrlEncodedQuery;
 use iron::status;
 use rustc_serialize::json::as_pretty_json;
@@ -43,7 +43,7 @@ struct Hit {
 
 lazy_static! {
     static ref INDEX_SERVER: IndexServer = {
-        IndexServer::load(&Path::new("/Users/pmasurel/wiki-index/"))
+        IndexServer::load(&Path::new("/data/wiki-index/"))
     };
 }
 
@@ -123,7 +123,7 @@ fn search(req: &mut Request) -> IronResult<Response> {
 
                     {
                         // let mut multi_collector = MultiCollector::from(vec!(&mut count_collector, &mut top_collector));
-                        let mut chained_collector = chain()
+                        let mut chained_collector = collector::chain()
                                 .add(&mut top_collector)
                                 .add(&mut count_collector);
                         let timings = parsed_query.search(&searcher, &mut chained_collector).unwrap();
