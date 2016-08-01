@@ -130,9 +130,9 @@ fn search(req: &mut Request) -> IronResult<Response> {
                     }
                     timings.push(search_timing.stop());
                     let storage_timing = TimingStarted::new("store");
-                    for scored_doc in top_collector.score_docs() {
-                        println!("{:?}", scored_doc);
-                    }
+                    // for scored_doc in top_collector.score_docs() {
+                    //     println!("{:?}", scored_doc);
+                    // }
                     let hits: Vec<Hit> = top_collector
                         .docs()
                         .iter()
