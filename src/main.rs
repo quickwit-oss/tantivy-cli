@@ -60,7 +60,7 @@ impl IndexServer {
         let schema = index.schema();
         let body_field = schema.get_field("body").unwrap();
         let title_field = schema.get_field("title").unwrap();
-        let query_parser = QueryParser::new(schema, body_field);
+        let query_parser = QueryParser::new(schema, vec!(body_field, title_field));
         IndexServer {
             index: index,
             query_parser: query_parser,
@@ -119,10 +119,9 @@ fn search(req: &mut Request) -> IronResult<Response> {
                     let searcher = INDEX_SERVER.index.searcher().unwrap();
 
                     let mut count_collector = CountCollector::new();
-                    let mut top_collector = TopCollector::with_limit(10);
+                    let mut top_collector = TopCollector::with_limit(30);
 
                     {
-                        // let mut multi_collector = MultiCollector::from(vec!(&mut count_collector, &mut top_collector));
                         let mut chained_collector = collector::chain()
                                 .add(&mut top_collector)
                                 .add(&mut count_collector);
