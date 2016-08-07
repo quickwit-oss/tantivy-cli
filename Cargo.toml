@@ -11,9 +11,16 @@ iron = "0.4"
 staticfile = "0.3.0"
 lazy_static = "*"
 rustc-serialize = "0.3.16"
+persistent="*"
+clap = "2"
 
 [dependencies.urlencoded]
 version = "0.4"
 
 [dependencies.mount]
 git = "https://github.com/iron/mount.git"
+
+# [dependencies.clap]
+#version = "2"
+#default-features = false
+#features = [ "suggestions", "color" ]
