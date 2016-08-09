@@ -1,5 +1,5 @@
 use rustc_serialize::json;
-use rustc_serialize::json::DecodeResult;
+use rustc_serialize::json::Json;
 use std::convert::From;
 use std::fs::File;
 use std::io;
@@ -13,13 +13,76 @@ use tantivy::schema::*;
 use time::PreciseTime;
 use clap::ArgMatches;
 
-use serialize::json;
 
-fn doc_from_json(schema: Schema, doc_json: &str) -> Document {
-    let json_it = json::from_str(doc_json).unwrap();
-    let json_obj = json_it.as_object().unwrap();
-    
-    println!()    
+#[derive(Debug)]
+enum DocMappingError {
+    NotJSON(json::ParserError),
+    NotJSONObject(String),
+    MappingError(String, String),
+    OverflowError(String),
+    NoSuchFieldInSchema(String),
+}
+
+impl From<json::ParserError> for DocMappingError {
+    fn from(err: json::ParserError) -> DocMappingError {
+        DocMappingError::NotJSON(err)
+    }
+}
+
+fn doc_from_json(schema: &Schema, doc_json: &str) -> Result<Document, DocMappingError> {
+    let json_node = try!(Json::from_str(doc_json));
+    let some_json_obj = json_node.as_object();
+    if !some_json_obj.is_some() {
+        let doc_json_sample: String;
+        if doc_json.len() < 20 {
+            doc_json_sample = String::from(doc_json);
+        }
+        else {
+            doc_json_sample = format!("{:?}...", &doc_json[0..20]);
+        }
+        return Err(DocMappingError::NotJSONObject(doc_json_sample))
+    }
+    let json_obj = some_json_obj.unwrap();
+    let mut doc = Document::new();
+    for (field_name, field_value) in json_obj.iter() {
+        match schema.get_field(field_name) {
+            Some(field) => {
+                let field_entry = schema.get_field_entry(field);
+                match field_value {
+                    &Json::String(ref field_text) => {
+                        match field_entry {
+                            &FieldEntry::Text(_, _) => {
+                                doc.add_text(field, field_text);
+                            }
+                            _ => {
+                                return Err(DocMappingError::MappingError(field_name.clone(), format!("Expected a string, got {:?}", field_value)));
+                            }
+                        }
+                    }
+                    &Json::U64(ref field_val_u64) => {
+                        match field_entry {
+                            &FieldEntry::U32(_, _) => {
+                                if *field_val_u64 > (u32::max_value() as u64) {
+                                    return Err(DocMappingError::OverflowError(field_name.clone()));
+                                }
+                                doc.add_u32(field, *field_val_u64 as u32);
+                            }
+                            _ => {
+                                return Err(DocMappingError::MappingError(field_name.clone(), format!("Expected a string, got {:?}", field_value)));
+                            }
+                        }
+                    },
+                    _ => {
+                        return Err(DocMappingError::MappingError(field_name.clone(), String::from("Value is neither u32, nor text.")));
+                    }
+                }
+            }
+            None => {
+                return Err(DocMappingError::NoSuchFieldInSchema(field_name.clone()))
+            }
+        }
+    }
+    Ok(doc)    
 }
 
 enum DocumentSource {
@@ -52,22 +115,15 @@ fn run_index(directory: PathBuf, document_source: DocumentSource) -> tantivy::Re
     let mut cur = PreciseTime::now();
     let group_count = 10000;
     
-    let title = schema.get_field("title").unwrap();
-    let url = schema.get_field("url").unwrap();
-    let body = schema.get_field("body").unwrap();
-    
     for article_line_res in articles.lines() {
-        let article_line = article_line_res.unwrap();
-        let article_res: DecodeResult<WikiArticle> = json::decode(&article_line);
-        match article_res {
-            Ok(article) => {
-                let mut doc = Document::new();
-                doc.add_text(title, &article.title);
-                doc.add_text(body, &article.body);
-                doc.add_text(url, &article.url);
+        let article_line = article_line_res.unwrap(); // TODO
+        match doc_from_json(&schema, &article_line) {
+            Ok(doc) => {
                 index_writer.add_document(doc).unwrap();
             }
-            Err(_) => {}
+            Err(err) => {
+                println!("Failed to add document doc {:?}", err);
+            }
         }
 
         if num_docs > 0 && (num_docs % group_count == 0) {
@@ -81,7 +137,8 @@ fn run_index(directory: PathBuf, document_source: DocumentSource) -> tantivy::Re
         num_docs += 1;
 
     }
-    index_writer.wait()
+    index_writer.wait().unwrap(); // TODO
+    Ok(())
 }
 
 
