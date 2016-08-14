@@ -1,15 +1,14 @@
 #[macro_use]
 extern crate clap;
 #[macro_use]
-extern crate lazy_static;
 extern crate rustc_serialize;
 extern crate tantivy;
 extern crate time;
-// extern crate regex;
 extern crate persistent;
 extern crate urlencoded;
 extern crate iron;
 extern crate staticfile;
+extern crate ansi_term;
 extern crate mount;
 
 use clap::{AppSettings, Arg, App, SubCommand};
@@ -18,7 +17,6 @@ use self::commands::*;
 
 
 fn main() {
-    
     let index_arg = Arg::with_name("index")
                     .short("i")
                     .long("index")
@@ -61,8 +59,36 @@ fn main() {
                     .short("f")
                     .long("file")
                     .value_name("file")
-                    .help("File containing the documents to index.")
-        ))
+                    .help("File containing the documents to index."))
+                .arg(Arg::with_name("num_threads")
+                    .short("t")
+                    .long("num_threads")
+                    .value_name("num_threads")
+                    .help("Number of indexing thread. By default num cores - 1 will be used")
+                    .default_value("0"))
+        )
+        .subcommand(
+            SubCommand::with_name("bench")
+                .about("Run a benchmark on your index")
+                .arg(index_arg.clone())
+                .arg(Arg::with_name("queries")
+                    .short("q")
+                    .long("queries")
+                    .value_name("queries")
+                    .help("File containing queries (one-per line) to run in the benchmark.")
+                    .required(true))
+                .arg(Arg::with_name("num_repeat")
+                    .short("n")
+                    .long("num_repeat")
+                    .value_name("num_repeat")
+                    .help("Number of time to repeat the benchmark.")
+                    .default_value("1"))
+        )
+        .subcommand(
+            SubCommand::with_name("merge")
+                .about("Merge all the segments of an index")
+                .arg(index_arg.clone())
+        )
         .get_matches();
     
     let (subcommand, some_options) = cli_options.subcommand();
@@ -70,10 +96,17 @@ fn main() {
     let options = some_options.unwrap();
     
     match subcommand {
-        // "serve" => run_serve(options),
         "new" => run_new_cli(options).unwrap(),
         "index" => run_index_cli(options).unwrap(),
         "serve" => run_serve_cli(options).unwrap(),
+        "merge" => run_merge_cli(options).unwrap(),
+        "bench" => {
+            let res = run_bench_cli(options);
+            match res {
+                Err(e) => { println!("{}", e);}
+                _ => {}
+            }
+        },
         _ => {}
     }
 }
