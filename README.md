@@ -1,7 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
-Tantivy-cli is command line interface for [tantivy search engine](https://github.com/fulmicoton/tantivy).
+Tantivy-cli is the project hosting the command line interface for [tantivy](https://github.com/fulmicoton/tantivy), a search engine project.
 
 
 # Tutorial: Indexing Wikipedia with Tantivy CLI
@@ -188,7 +188,7 @@ Its named is simply a uuid.
 
 
 
-# Serve the search index
+# Serve the search index : `serve`
 
 Tantivy's cli also embeds a search server.
 You can run it with the following command.
@@ -205,3 +205,25 @@ the following [url](http://localhost:3000/api/?q=barack+obama&explain=true&nhits
     http://localhost:3000/api/?q=barack+obama&explain=true&nhits=20
 
 
+# Optimizing the index : `merge`
+
+Each tantivy's indexer thread is closing a new segment every 100K documents (this is completely arbitrary at the moment).
+You should have more than 50 segments in your dictionary at the moment.
+
+Having that many queries is hurting your query performance (well, mostly the fast ones).
+Tantivy merge will merge your segment into one. 
+
+```
+    tantivy merge -i ./wikipedia-index
+```
+
+(The command takes around 7 minutes on my computer)
+
+Note that your files are still there even after having run the command.
+`meta.json` however only lists one of the segments.
+You will still need to remove the files manually.
+
+
+
+
+ 
