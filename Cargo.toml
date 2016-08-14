@@ -10,6 +10,7 @@ repository = "https://github.com/fulmicoton/tantivy"
 
 readme = "README.md"
 keywords = ["search", "information", "retrieval"]
+license = "MIT"
 
 [dependencies]
 #tantivy = { path = "../tantivy" }
@@ -18,7 +19,7 @@ time = "0.1.34"
 iron = "0.4"
 staticfile = "0.3.0"
 rustc-serialize = "0.3.16"
-persistent="*"
+persistent="0.2.0"
 clap = "2"
 ansi_term = "0.8.0"
 urlencoded = "0.4"

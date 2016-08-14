@@ -199,4 +199,9 @@ You can run it with the following command.
 
 By default, the server is serving on the port `3000`.
 
+You can search for the top 20 most relevant documents for the query `Barack Obama` by accessing
+the following [url](http://localhost:3000/api/?q=barack+obama&explain=true&nhits=20) in your browser
+
+    http://localhost:3000/api/?q=barack+obama&explain=true&nhits=20
+
 
