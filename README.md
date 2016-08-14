@@ -13,13 +13,16 @@ In this tutorial, we will create a brand new index with the articles of English 
 ## Install
 
 There are two ways to get `tantivy`.
-If you are a rust programmer, you can run `cargo install tantivy-cli`.
-Alternatively, if you are on `Linux 64bits`, you can download a
+If you are a rust programmer, you probably have `cargo` installed and you can just
+run `cargo install tantivy-cli`.
+
+Alternatively, if you are on `Linux 64bits`, you can directly try and download a
 static binary:  [binaries/linux_x86_64/](http://fulmicoton.com/tantivy-files/binaries/linux_x86_64/tantivy) 
 
-## Creating the index
 
-Create a directory in which your index will be stored.
+## Creating the index:  `new`
+ 
+Let's create a directory in which your index will be stored.
 
 ```bash
     # create the directory
@@ -27,21 +30,41 @@ Create a directory in which your index will be stored.
 ```
 
 
-We will now initialize the index and create it's schema.
+We will now initialize the index and create its schema.
+The [schema](http://fulmicoton.com/tantivy/tantivy/schema/index.html) defines
+the list of your fields, and for each field :
+- its name 
+- its type, currently `u32` or `str`
+- how it should be indexed.
 
-Our documents will contain
+You can find more information about the latter on 
+[tantivy's schema documentation page](http://fulmicoton.com/tantivy/tantivy/schema/index.html
+
+In our case, our documents will contain
 * a title
 * a body 
 * a url
 
+We want the title and the body to be tokenized and index. We want 
+to also add the term frequency and term positions to our index.
+(To be honest, phrase queries are not yet implemented in tantivy,
+so the positions won't be really useful in this tutorial.)
+
 Running `tantivy new` will start a wizard that will help you go through
 the definition of the schema of our new index.
+
+Like all the other commands of `tantivy`, you will have to 
+pass it your index directory via the `-i` or `--index`
+parameter as follows.
+
 
 ```bash
     tantivy new -i wikipedia-index
 ```
 
-When asked answer to the question as follows:
+
+
+When asked answer to the question, answer as follows:
 
 ```none
 
@@ -83,24 +106,24 @@ When asked answer to the question as follows:
         "name": "title",
         "type": "text",
         "options": {
-        "indexing": "position",
-        "stored": true
+            "indexing": "position",
+            "stored": true
         }
     },
     {
         "name": "body",
         "type": "text",
         "options": {
-        "indexing": "position",
-        "stored": true
+            "indexing": "position",
+            "stored": true
         }
     },
     {
         "name": "url",
         "type": "text",
         "options": {
-        "indexing": "unindexed",
-        "stored": true
+            "indexing": "unindexed",
+            "stored": true
         }
     }
     ]
@@ -108,14 +131,20 @@ When asked answer to the question as follows:
 
 ```
 
-If you want to know more about the meaning of these options, you can check out the [schema doc page](http://fulmicoton.com/tantivy/tantivy/schema/index.html).  
+After the wizard has finished, a `meta.json` has been written in `wikipedia-index/meta.json`.
+It is a fairly human readable JSON, so you may check its content.
 
-The json displayed at the end has been written in `wikipedia-index/meta.json`.
+It contains two sections :
+- segments (currently empty, but we will change that soon)
+- schema 
 
 
-# Get the documents to index
+ 
 
-Tantivy's index command offers a way to index a json file.
+# Indexing the document : `index`
+
+
+Tantivy's `index` command offers a way to index a json file.
 More accurately, the file must contain one document per line, in a json format.
 The structure of this JSON object must match that of our schema definition.
 
@@ -123,49 +152,51 @@ The structure of this JSON object must match that of our schema definition.
     {"body": "some text", "title": "some title", "url": "http://somedomain.com"}
 ```
 
-You can download a corpus of more than 5 millions articles from wikipedia 
+For this tutorial, you can download a corpus with the  5 millions+ English articles of wikipedia 
 formatted in the right format here : [wiki-articles.json (2.34 GB)](https://www.dropbox.com/s/wwnfnu441w1ec9p/wiki-articles.json.bz2?dl=0).
-If you are in a rush you can [download 100 articles in the right format here](http://fulmicoton.com/tantivy-files/wiki-articles-1000.json).
-
 Make sure to uncompress the file
 
 ```bash
     bunzip2 wiki-articles.json.bz2
-``` 
+```
 
-# Index the documents.
+If you are in a rush you can [download 100 articles in the right format here](http://fulmicoton.com/tantivy-files/wiki-articles-1000.json).
 
 The `index` command will index your document.
-By default it will use as many threads as there are core on your machine.
+By default it will use as many threads as there are cores on your machine.
+You can change the number of threads by passing it the `-t` parameter.
 
-On my computer (8 core Xeon(R) CPU X3450  @ 2.67GHz), it only takes 7 minutes.
+On my computer (8 core Xeon(R) CPU X3450  @ 2.67GHz), it will take around 6 minutes.
 
 ```
-    cat /data/wiki-articles | tantivy index -i wikipedia-index
+    cat wiki-articles.json | tantivy index -i ./wikipedia-index
 ```
 
 While it is indexing, you can peek at the index directory
 to check what is happening.
 
 ```bash
-    ls wikipedia-index
+    ls ./wikipedia-index
 ```
 
-If you indexed the 5 millions articles, you should see a lot of files, all with the following format
+If you indexed the 5 millions articles, you should see a lot of new files, all with the following format
 The main file is `meta.json`.
 
 Our index is in fact divided in segments. Each segment acts as an individual smaller index.
-It is named by a uuid. 
-Each different files is storing a different datastructure for the index.
+Its named is simply a uuid. 
+
+
 
 
 # Serve the search index
+
+Tantivy's cli also embeds a search server.
+You can run it with the following command.
 
 ```
     tantivy serve -i wikipedia-index
 ```
 
-You can start a small server with a JSON API to search into wikipedia.
 By default, the server is serving on the port `3000`.
 
 
