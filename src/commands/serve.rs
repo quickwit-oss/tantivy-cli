@@ -1,3 +1,20 @@
+/// This tantivy command starts a http server (by default on port 3000)
+/// 
+/// Currently the only entrypoint is /api/
+/// and it takes the following query string argument
+/// 
+/// - `q=` :    your query
+//  - `nhits`:  the number of hits that should be returned. (default to 10)  
+/// - `explain=` : if true returns some information about the score.  
+///
+///
+/// For instance, the following call should return the 20 most relevant
+/// hits for fulmicoton.
+///
+///     http://localhost:3000/api/?q=fulmicoton&explain=false&nhits=20
+///
+
+
 use clap::ArgMatches;
 use iron::mime::Mime;
 use iron::prelude::*;
@@ -7,8 +24,11 @@ use mount::Mount;
 use persistent::Read;
 use rustc_serialize::json::as_pretty_json;
 use std::convert::From;
+use std::error::Error;
+use std::fmt::{self, Debug};
 use std::path::Path;
 use std::path::PathBuf;
+use std::str::FromStr;
 use tantivy;
 use tantivy::collector;
 use tantivy::collector::CountCollector;
@@ -19,12 +39,12 @@ use tantivy::query::Explanation;
 use tantivy::query::Query;
 use tantivy::query::QueryParser;
 use tantivy::Result;
-use tantivy::schema::Schema;
+use tantivy::schema::Field;
+use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
+use tantivy::schema::Schema;
+use tantivy::TimerTree;
 use urlencoded::UrlEncodedQuery;
-use std::str::FromStr;
-use std::fmt::{self, Debug};
-use std::error::Error;
 
 pub fn run_serve_cli(matches: &ArgMatches) -> tantivy::Result<()> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
@@ -40,19 +60,13 @@ struct Serp {
     q: String,
     num_hits: usize,
     hits: Vec<Hit>,
-    timings: Vec<Timing>,
+    timings: TimerTree,
 }
 
 #[derive(RustcEncodable)]
 struct Hit {
     doc: NamedFieldDocument,
     explain: Option<Explanation>,
-}
-
-#[derive(RustcEncodable)]
-struct Timing {
-    name: String,
-    duration: i64,
 }
 
 struct IndexServer {
@@ -66,9 +80,21 @@ impl IndexServer {
     fn load(path: &Path) -> IndexServer {
         let index = Index::open(path).unwrap();
         let schema = index.schema();
-        let body_field = schema.get_field("body").unwrap();
-        let title_field = schema.get_field("title").unwrap();
-        let query_parser = QueryParser::new(schema.clone(), vec!(body_field, title_field));
+        let default_fields: Vec<Field> = schema
+            .fields()
+            .iter()
+            .enumerate()
+            .filter(
+                |&(_, ref field_entry)| {
+                    match *field_entry.field_type() {
+                        FieldType::Str(_) => true,
+                        FieldType::U32(_) => false
+                    }
+                }
+            )
+            .map(|(i, _)| Field(i as u8))
+            .collect();
+        let query_parser = QueryParser::new(schema.clone(), default_fields);
         IndexServer {
             index: index,
             query_parser: query_parser,
@@ -88,14 +114,17 @@ impl IndexServer {
         let searcher = self.index.searcher().unwrap();
         let mut count_collector = CountCollector::new();
         let mut top_collector = TopCollector::with_limit(num_hits);
-
+        let mut timer_tree = TimerTree::new();
         {
+            let _search_timer = timer_tree.open("search");
             let mut chained_collector = collector::chain()
-                    .add(&mut top_collector)
-                    .add(&mut count_collector);
+                .add(&mut top_collector)
+                .add(&mut count_collector);
             try!(query.search(&searcher, &mut chained_collector));
         }
-        let hits: Vec<Hit> = top_collector.docs()
+        let hits: Vec<Hit> = {
+            let _fetching_timer = timer_tree.open("fetching docs");
+            top_collector.docs()
                 .iter()
                 .map(|doc_address| {
                     let doc: Document = searcher.doc(doc_address).unwrap();
@@ -108,12 +137,13 @@ impl IndexServer {
                     }
                     self.create_hit(&doc, explanation)
                 })
-                .collect();
+                .collect()
+        };
         Ok(Serp {
             q: q,
-            hits: hits,
             num_hits: count_collector.count(),
-            timings: Vec::new(),
+            hits: hits,
+            timings: timer_tree,
         })
     }
 }
