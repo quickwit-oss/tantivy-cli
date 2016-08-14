@@ -10,14 +10,18 @@ Tantivy-cli is the project hosting the command line interface for [tantivy](http
 
 In this tutorial, we will create a brand new index with the articles of English wikipedia in it.
 
-## Install
+## Installing the tantivy CLI.
 
-There are two ways to get `tantivy`.
+There are simple way to add the  `tantivy` CLI to your computer.
+
 If you are a rust programmer, you probably have `cargo` installed and you can just
 run `cargo install tantivy-cli`.
 
-Alternatively, if you are on `Linux 64bits`, you can directly try and download a
-static binary:  [binaries/linux_x86_64/](http://fulmicoton.com/tantivy-files/binaries/linux_x86_64/tantivy) 
+Alternatively, if you are on `Linux 64bits`, you can directly download a
+static binary:  [binaries/linux_x86_64/](http://fulmicoton.com/tantivy-files/binaries/linux_x86_64/tantivy),
+and save it in a directory of your system's `PATH`.
+
+
 
 
 ## Creating the index:  `new`
