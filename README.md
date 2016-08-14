@@ -1,5 +1,7 @@
-Tantivy-cli is command line interface for [tantivy search engine](https://github.com/fulmicoton/tantivy).
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+
+Tantivy-cli is command line interface for [tantivy search engine](https://github.com/fulmicoton/tantivy).
 
 
 # Tutorial: Indexing Wikipedia with Tantivy CLI
