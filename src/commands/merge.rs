@@ -12,7 +12,7 @@ pub fn run_merge_cli(argmatch: &ArgMatches) -> Result<(), String> {
 
 fn run_merge(path: PathBuf) -> tantivy::Result<()> {
     let index = try!(Index::open(&path));
-    let segments = index.segments();
+    let segments = try!(index.segments());
     let mut index_writer = try!(index.writer());
     index_writer.merge(&segments)
 }

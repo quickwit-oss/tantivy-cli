@@ -111,7 +111,7 @@ impl IndexServer {
     
     fn search(&self, q: String, num_hits: usize, explain:  bool) -> Result<Serp> {
         let query = self.query_parser.parse_query(&q).unwrap();
-        let searcher = self.index.searcher().unwrap();
+        let searcher = self.index.searcher();
         let mut count_collector = CountCollector::new();
         let mut top_collector = TopCollector::with_limit(num_hits);
         let mut timer_tree = TimerTree::new();

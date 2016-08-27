@@ -7,6 +7,7 @@ extern crate time;
 extern crate persistent;
 extern crate urlencoded;
 extern crate iron;
+extern crate chan;
 extern crate staticfile;
 extern crate ansi_term;
 extern crate mount;
@@ -23,7 +24,7 @@ fn main() {
                     .value_name("directory")
                     .help("Tantivy index directory filepath")
                     .required(true);
-    
+
     let cli_options = App::new("Tantivy")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .version("0.1")
@@ -33,7 +34,7 @@ fn main() {
             SubCommand::with_name("new")
                 .about("Create a new index. The schema will be populated with a simple example schema")
                 .arg(index_arg.clone())
-        ) 
+        )
         .subcommand(
             SubCommand::with_name("serve")
                 .about("Start a server")
@@ -50,7 +51,7 @@ fn main() {
                     .help("Port")
                     .default_value("localhost")
                 )
-        )       
+        )
         .subcommand(
             SubCommand::with_name("index")
                 .about("Index files")
@@ -90,11 +91,11 @@ fn main() {
                 .arg(index_arg.clone())
         )
         .get_matches();
-    
+
     let (subcommand, some_options) = cli_options.subcommand();
-    
+
     let options = some_options.unwrap();
-    
+
     match subcommand {
         "new" => run_new_cli(options).unwrap(),
         "index" => run_index_cli(options).unwrap(),

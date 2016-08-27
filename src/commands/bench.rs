@@ -57,7 +57,7 @@ fn run_bench(index_path: &Path,
     println!("-------------------------------\n\n\n");
     
     let index = try!(Index::open(index_path).map_err(|e| format!("Failed to open index.\n{:?}", e)));
-    let searcher = try!(index.searcher().map_err(|e| format!("Failed to acquire searcher.\n{:?}", e)));
+    let searcher = index.searcher();
     let default_search_fields: Vec<Field> = extract_search_fields(&index.schema());
     let queries = try!(read_query_file(query_filepath).map_err(|e| format!("Failed reading the query file:  {}", e)));
     let query_parser = QueryParser::new(index.schema(), default_search_fields);
