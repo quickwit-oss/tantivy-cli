@@ -25,7 +25,10 @@ ansi_term = "0.8.0"
 urlencoded = "0.4"
 mount = "0.2.1"
 chan = "*"
-
+bincode = "*"
+byteorder = "*"
+log = "0.3"
+env_logger = "0.3"
 
 # [dependencies.clap]
 #version = "2"

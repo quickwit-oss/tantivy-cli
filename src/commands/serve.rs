@@ -38,7 +38,6 @@ use tantivy::Index;
 use tantivy::query::Explanation;
 use tantivy::query::Query;
 use tantivy::query::QueryParser;
-use tantivy::Result;
 use tantivy::schema::Field;
 use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
@@ -46,12 +45,12 @@ use tantivy::schema::Schema;
 use tantivy::TimerTree;
 use urlencoded::UrlEncodedQuery;
 
-pub fn run_serve_cli(matches: &ArgMatches) -> tantivy::Result<()> {
+pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
     let port = value_t!(matches, "port", u16).unwrap_or(3000u16);
     let host_str = matches.value_of("host").unwrap_or("localhost");
     let host = format!("{}:{}", host_str, port);
-    run_serve(index_directory, &host)   
+    run_serve(index_directory, &host).map_err(|e| format!("{:?}", e))
 }
 
 
@@ -109,7 +108,7 @@ impl IndexServer {
         }
     }
     
-    fn search(&self, q: String, num_hits: usize, explain:  bool) -> Result<Serp> {
+    fn search(&self, q: String, num_hits: usize, explain: bool) -> tantivy::Result<Serp> {
         let query = self.query_parser.parse_query(&q).unwrap();
         let searcher = self.index.searcher();
         let mut count_collector = CountCollector::new();

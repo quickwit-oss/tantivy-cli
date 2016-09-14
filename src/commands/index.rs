@@ -1,6 +1,7 @@
 use std::convert::From;
 use std::fs::File;
 use std::io;
+use std::cmp;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Read;
@@ -25,16 +26,13 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
         }
     };
     let num_threads = try!(value_t!(argmatch, "num_threads", usize).map_err(|_|format!("Failed to read num_threads argument as an integer.")));
-    run_index(index_directory, document_source, num_threads).map_err(|e| format!("Indexing failed : {:?}", e))
+    let buffer_size = try!(value_t!(argmatch, "memory_size", usize).map_err(|_|format!("Failed to read the buffer size argument as an integer.")));
+    let buffer_size_per_thread = buffer_size / num_threads;
+    run_index(index_directory, document_source, buffer_size_per_thread, num_threads).map_err(|e| format!("Indexing failed : {:?}", e))
 }
 
-enum DocumentSource {
-    FromPipe,
-    FromFile(PathBuf),
-}
-
-fn run_index(directory: PathBuf, document_source: DocumentSource, num_threads: usize) -> tantivy::Result<()> {
-
+fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_per_thread: usize, num_threads: usize) -> tantivy::Result<()> {
+    
     let index = try!(Index::open(&directory));
     let schema = index.schema();
     let (line_sender, line_receiver) = chan::sync(10_000);
@@ -47,14 +45,14 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, num_threads: u
             line_sender.send(article_line);
         }
     });
+    
 
-    // using 3 threads to parse the json documents
-    for _ in 0..3 {
-
+    let num_threads_to_parse_json = cmp::max(1, num_threads / 2);
+    info!("Using {} threads to parse json", num_threads_to_parse_json);
+    for _ in 0..num_threads_to_parse_json {
         let schema_clone = schema.clone();
         let doc_sender_clone = doc_sender.clone();
         let line_receiver_clone = line_receiver.clone();
-
         thread::spawn(move || {
             for article_line in line_receiver_clone {
                 match schema_clone.parse_document(&article_line) {
@@ -73,10 +71,10 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, num_threads: u
 
     let mut index_writer = try!(
         if num_threads > 0 {
-            index.writer_with_num_threads(num_threads)
+            index.writer_with_num_threads(num_threads, buffer_size_per_thread)
         }
         else {
-            index.writer()
+            index.writer(buffer_size_per_thread)
         }
     );
 
@@ -115,13 +113,10 @@ fn index_documents(index_writer: &mut IndexWriter, doc_receiver: chan::Receiver<
 }
 
 
-#[derive(Clone,Debug,RustcDecodable,RustcEncodable)]
-pub struct WikiArticle {
-    pub url: String,
-    pub title: String,
-    pub body: String,
+enum DocumentSource {
+    FromPipe,
+    FromFile(PathBuf),
 }
-
 
 impl DocumentSource {
     fn read(&self,) -> io::Result<BufReader<Box<Read>>> {

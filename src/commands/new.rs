@@ -12,9 +12,9 @@ use std::ascii::AsciiExt;
 use rustc_serialize::json;
 
 
-pub fn run_new_cli(matches: &ArgMatches) -> tantivy::Result<()> {
+pub fn run_new_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
-    run_new(index_directory)   
+    run_new(index_directory).map_err(|e| format!("{:?}" , e))
 }
 
 

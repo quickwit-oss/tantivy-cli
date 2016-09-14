@@ -2,6 +2,9 @@
 extern crate clap;
 #[macro_use]
 extern crate rustc_serialize;
+#[macro_use]
+extern crate log;
+extern crate env_logger;
 extern crate tantivy;
 extern crate time;
 extern crate persistent;
@@ -11,6 +14,8 @@ extern crate chan;
 extern crate staticfile;
 extern crate ansi_term;
 extern crate mount;
+extern crate bincode;
+extern crate byteorder;
 
 use clap::{AppSettings, Arg, App, SubCommand};
 mod commands;
@@ -18,6 +23,9 @@ use self::commands::*;
 
 
 fn main() {
+    
+    env_logger::init().unwrap();
+    
     let index_arg = Arg::with_name("index")
                     .short("i")
                     .long("index")
@@ -67,6 +75,12 @@ fn main() {
                     .value_name("num_threads")
                     .help("Number of indexing thread. By default num cores - 1 will be used")
                     .default_value("0"))
+                .arg(Arg::with_name("memory_size")
+                    .short("m")
+                    .long("memory_size")
+                    .value_name("memory_size")
+                    .help("Total memory_size in bytes. It will be split for the different threads.")
+                    .default_value("100000000"))
         )
         .subcommand(
             SubCommand::with_name("bench")
@@ -93,21 +107,14 @@ fn main() {
         .get_matches();
 
     let (subcommand, some_options) = cli_options.subcommand();
-
     let options = some_options.unwrap();
-
-    match subcommand {
-        "new" => run_new_cli(options).unwrap(),
-        "index" => run_index_cli(options).unwrap(),
-        "serve" => run_serve_cli(options).unwrap(),
-        "merge" => run_merge_cli(options).unwrap(),
-        "bench" => {
-            let res = run_bench_cli(options);
-            match res {
-                Err(e) => { println!("{}", e);}
-                _ => {}
-            }
-        },
-        _ => {}
-    }
+    let run_cli = match subcommand {
+        "new" => run_new_cli,
+        "index" => run_index_cli,
+        "serve" => run_serve_cli,
+        "merge" => run_merge_cli,
+        "bench" => run_bench_cli,
+        _ => panic!("Subcommand {} is unknown", subcommand)
+    };
+    run_cli(options).unwrap();
 }
