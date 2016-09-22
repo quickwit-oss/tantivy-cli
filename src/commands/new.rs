@@ -73,7 +73,7 @@ fn prompt_yn(msg: &str) -> bool {
 
 
 fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
-    let mut text_options = TextOptions::new();
+    let mut text_options = TextOptions::default();
     if prompt_yn("Should the field be stored") {
         text_options = text_options.set_stored();
     }
@@ -105,7 +105,7 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
 
 
 fn ask_add_field_u32(field_name: &str, schema_builder: &mut SchemaBuilder) {
-    let mut u32_options = U32Options::new();
+    let mut u32_options = U32Options::default();
     if prompt_yn("Should the field be stored") {
         u32_options = u32_options.set_stored();
     }
@@ -133,7 +133,7 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
 fn run_new(directory: PathBuf) -> tantivy::Result<()> {
     println!("\n{} ", Style::new().bold().fg(Green).paint("Creating new index"));
     println!("{} ", Style::new().bold().fg(Green).paint("Let's define it's schema!"));
-    let mut schema_builder = SchemaBuilder::new();
+    let mut schema_builder = SchemaBuilder::default();
     loop  {
         ask_add_field(&mut schema_builder);
         if !prompt_yn("Add another field") {

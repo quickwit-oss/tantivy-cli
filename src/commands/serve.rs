@@ -111,14 +111,14 @@ impl IndexServer {
     fn search(&self, q: String, num_hits: usize, explain: bool) -> tantivy::Result<Serp> {
         let query = self.query_parser.parse_query(&q).unwrap();
         let searcher = self.index.searcher();
-        let mut count_collector = CountCollector::new();
+        let mut count_collector = CountCollector::default();
         let mut top_collector = TopCollector::with_limit(num_hits);
-        let mut timer_tree = TimerTree::new();
+        let mut timer_tree = TimerTree::default();
         {
             let _search_timer = timer_tree.open("search");
             let mut chained_collector = collector::chain()
-                .add(&mut top_collector)
-                .add(&mut count_collector);
+                .push(&mut top_collector)
+                .push(&mut count_collector);
             try!(query.search(&searcher, &mut chained_collector));
         }
         let hits: Vec<Hit> = {
