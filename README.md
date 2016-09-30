@@ -211,17 +211,18 @@ the following [url](http://localhost:3000/api/?q=barack+obama&explain=true&nhits
 
 # Optimizing the index: `merge`
 
-Each of tantivy's indexer threads closes a new segment every 100K documents (this is completely arbitrary at the moment).
-You should currently have more than 50 segments in your dictionary.
+Each of tantivy's indexer threads is building its own independant segment.
+When its buffer is full, it closes its running segment, and starts working on a new one.
+You should currently have more than 50 segments in your directory.
 
-Having that many segments hurts your query performance (well, mostly the fast ones).
-Tantivy merge will merge your segments into one. 
+Having that many segments can hurt your query performance.
+Calling `tantivy merge` will merge your segments into one. 
 
 ```
     tantivy merge -i ./wikipedia-index
 ```
 
-(The command takes around 7 minutes on my computer)
+(The command takes less than 4 minutes on my computer)
 
 Note that your files are still there even after having run the command.
 However, `meta.json` only lists one of the segments.
