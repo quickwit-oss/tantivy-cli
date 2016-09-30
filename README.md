@@ -73,12 +73,12 @@ Answer the questions as follows:
 ```none
 
     Creating new index 
-    Let's define it's schema! 
+    Let's define its schema! 
 
 
 
     New field name  ? title
-    Text or unsigned 32-bit Integer (T/I) ? T
+    Text or unsigned 32-bit integer (T/I) ? T
     Should the field be stored (Y/N) ? Y
     Should the field be indexed (Y/N) ? Y
     Should the field be tokenized (Y/N) ? Y
@@ -89,7 +89,7 @@ Answer the questions as follows:
 
 
     New field name  ? body
-    Text or unsigned 32-bit Integer (T/I) ? T
+    Text or unsigned 32-bit integer (T/I) ? T
     Should the field be stored (Y/N) ? Y
     Should the field be indexed (Y/N) ? Y
     Should the field be tokenized (Y/N) ? Y
@@ -100,7 +100,7 @@ Answer the questions as follows:
 
 
     New field name  ? url
-    Text or unsigned 32-bit Integer (T/I) ? T
+    Text or unsigned 32-bit integer (T/I) ? T
     Should the field be stored (Y/N) ? Y
     Should the field be indexed (Y/N) ? N
     Add another field (Y/N) ? N
