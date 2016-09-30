@@ -121,7 +121,7 @@ fn ask_add_field_u32(field_name: &str, schema: &mut Schema) {
 fn ask_add_field(schema: &mut Schema) {
     println!("\n\n");
     let field_name = prompt_input("New field name ", field_name_validate);
-    let text_or_integer = prompt_options("Text or unsigned 32-bit Integer", vec!('T', 'I'));
+    let text_or_integer = prompt_options("Text or unsigned 32-bit integer", vec!('T', 'I'));
     if text_or_integer =='T' {
         ask_add_field_text(&field_name, schema);
     }
@@ -132,7 +132,7 @@ fn ask_add_field(schema: &mut Schema) {
 
 fn run_new(directory: PathBuf) -> tantivy::Result<()> {
     println!("\n{} ", Style::new().bold().fg(Green).paint("Creating new index"));
-    println!("{} ", Style::new().bold().fg(Green).paint("Let's define it's schema!"));
+    println!("{} ", Style::new().bold().fg(Green).paint("Let's define its schema!"));
     let mut schema = Schema::new();
     loop  {
         ask_add_field(&mut schema);
