@@ -1,7 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
-Tantivy-cli is the project hosting the command line interface for [tantivy](https://github.com/fulmicoton/tantivy), a search engine project.
+`tantivy-cli` is the project hosting the command line interface for [tantivy](https://github.com/fulmicoton/tantivy), a search engine project.
 
 
 # Tutorial: Indexing Wikipedia with Tantivy CLI
@@ -12,14 +12,14 @@ In this tutorial, we will create a brand new index with the articles of English 
 
 ## Installing the tantivy CLI.
 
-There are simple way to add the  `tantivy` CLI to your computer.
+There are a couple ways to install `tantivy-cli`.
 
-If you are a rust programmer, you probably have `cargo` installed and you can just
+If you are a Rust programmer, you probably have `cargo` installed and you can just
 run `cargo install tantivy-cli`.
 
-Alternatively, if you are on `Linux 64bits`, you can directly download a
+Alternatively, if you are on 64-bit Linux, you can directly download a
 static binary:  [binaries/linux_x86_64/](http://fulmicoton.com/tantivy-files/binaries/linux_x86_64/tantivy),
-and save it in a directory of your system's `PATH`.
+and save it in a directory on your system's `PATH`.
 
 
 
@@ -36,7 +36,7 @@ Let's create a directory in which your index will be stored.
 
 We will now initialize the index and create its schema.
 The [schema](http://fulmicoton.com/tantivy/tantivy/schema/index.html) defines
-the list of your fields, and for each field :
+the list of your fields, and for each field:
 - its name 
 - its type, currently `u32` or `str`
 - how it should be indexed.
@@ -49,17 +49,17 @@ In our case, our documents will contain
 * a body 
 * a url
 
-We want the title and the body to be tokenized and index. We want 
-to also add the term frequency and term positions to our index.
+We want the title and the body to be tokenized and indexed. We also want 
+to add the term frequency and term positions to our index.
 (To be honest, phrase queries are not yet implemented in tantivy,
 so the positions won't be really useful in this tutorial.)
 
-Running `tantivy new` will start a wizard that will help you go through
-the definition of the schema of our new index.
+Running `tantivy new` will start a wizard that will help you
+define the schema of the new index.
 
 Like all the other commands of `tantivy`, you will have to 
 pass it your index directory via the `-i` or `--index`
-parameter as follows.
+parameter as follows:
 
 
 ```bash
@@ -68,17 +68,17 @@ parameter as follows.
 
 
 
-When asked answer to the question, answer as follows:
+Answer the questions as follows:
 
 ```none
 
     Creating new index 
-    Let's define it's schema! 
+    Let's define its schema! 
 
 
 
     New field name  ? title
-    Text or unsigned 32-bit Integer (T/I) ? T
+    Text or unsigned 32-bit integer (T/I) ? T
     Should the field be stored (Y/N) ? Y
     Should the field be indexed (Y/N) ? Y
     Should the field be tokenized (Y/N) ? Y
@@ -89,7 +89,7 @@ When asked answer to the question, answer as follows:
 
 
     New field name  ? body
-    Text or unsigned 32-bit Integer (T/I) ? T
+    Text or unsigned 32-bit integer (T/I) ? T
     Should the field be stored (Y/N) ? Y
     Should the field be indexed (Y/N) ? Y
     Should the field be tokenized (Y/N) ? Y
@@ -100,7 +100,7 @@ When asked answer to the question, answer as follows:
 
 
     New field name  ? url
-    Text or unsigned 32-bit Integer (T/I) ? T
+    Text or unsigned 32-bit integer (T/I) ? T
     Should the field be stored (Y/N) ? Y
     Should the field be indexed (Y/N) ? N
     Add another field (Y/N) ? N
@@ -135,30 +135,29 @@ When asked answer to the question, answer as follows:
 
 ```
 
-After the wizard has finished, a `meta.json` has been written in `wikipedia-index/meta.json`.
-It is a fairly human readable JSON, so you may check its content.
+After the wizard has finished, a `meta.json` should exist in `wikipedia-index/meta.json`.
+It is a fairly human readable JSON, so you can check its content.
 
-It contains two sections :
+It contains two sections:
 - segments (currently empty, but we will change that soon)
 - schema 
 
 
  
 
-# Indexing the document : `index`
+# Indexing the document: `index`
 
 
 Tantivy's `index` command offers a way to index a json file.
-More accurately, the file must contain one document per line, in a json format.
+The file must contain one JSON object per line.
 The structure of this JSON object must match that of our schema definition.
 
 ```json
     {"body": "some text", "title": "some title", "url": "http://somedomain.com"}
 ```
 
-For this tutorial, you can download a corpus with the  5 millions+ English articles of wikipedia 
-formatted in the right format here : [wiki-articles.json (2.34 GB)](https://www.dropbox.com/s/wwnfnu441w1ec9p/wiki-articles.json.bz2?dl=0).
-Make sure to uncompress the file
+For this tutorial, you can download a corpus with the 5 million+ English Wikipedia articles in the right format here: [wiki-articles.json (2.34 GB)](https://www.dropbox.com/s/wwnfnu441w1ec9p/wiki-articles.json.bz2?dl=0).
+Make sure to decompress the file
 
 ```bash
     bunzip2 wiki-articles.json.bz2
@@ -183,16 +182,17 @@ to check what is happening.
     ls ./wikipedia-index
 ```
 
-If you indexed the 5 millions articles, you should see a lot of new files, all with the following format
+If you indexed the 5 million articles, you should see a lot of new files, all with the following format:
+
 The main file is `meta.json`.
 
 Our index is in fact divided in segments. Each segment acts as an individual smaller index.
-Its named is simply a uuid. 
+Its name is simply a uuid. 
 
 
 
 
-# Serve the search index : `serve`
+# Serve the search index: `serve`
 
 Tantivy's cli also embeds a search server.
 You can run it with the following command.
@@ -201,7 +201,7 @@ You can run it with the following command.
     tantivy serve -i wikipedia-index
 ```
 
-By default, the server is serving on the port `3000`.
+By default, it will serve on port `3000`.
 
 You can search for the top 20 most relevant documents for the query `Barack Obama` by accessing
 the following [url](http://localhost:3000/api/?q=barack+obama&explain=true&nhits=20) in your browser
@@ -209,25 +209,21 @@ the following [url](http://localhost:3000/api/?q=barack+obama&explain=true&nhits
     http://localhost:3000/api/?q=barack+obama&explain=true&nhits=20
 
 
-# Optimizing the index : `merge`
+# Optimizing the index: `merge`
 
-Each tantivy's indexer thread is closing a new segment every 100K documents (this is completely arbitrary at the moment).
-You should have more than 50 segments in your dictionary at the moment.
+Each of tantivy's indexer threads is building its own independant segment.
+When its buffer is full, it closes its running segment, and starts working on a new one.
+You should currently have more than 50 segments in your directory.
 
-Having that many queries is hurting your query performance (well, mostly the fast ones).
-Tantivy merge will merge your segment into one. 
+Having that many segments can hurt your query performance.
+Calling `tantivy merge` will merge your segments into one. 
 
 ```
     tantivy merge -i ./wikipedia-index
 ```
 
-(The command takes around 7 minutes on my computer)
+(The command takes less than 4 minutes on my computer)
 
 Note that your files are still there even after having run the command.
-`meta.json` however only lists one of the segments.
+However, `meta.json` only lists one of the segments.
 You will still need to remove the files manually.
-
-
-
-
- 
