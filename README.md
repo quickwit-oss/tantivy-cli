@@ -1,7 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
-Tantivy-cli is the project hosting the command line interface for [tantivy](https://github.com/fulmicoton/tantivy), a search engine project.
+`tantivy-cli` is the project hosting the command line interface for [tantivy](https://github.com/fulmicoton/tantivy), a search engine project.
 
 
 # Tutorial: Indexing Wikipedia with Tantivy CLI
@@ -12,9 +12,9 @@ In this tutorial, we will create a brand new index with the articles of English 
 
 ## Installing the tantivy CLI.
 
-There are a couple ways to add the  `tantivy` CLI to your computer.
+There are a couple ways to install `tantivy-cli`.
 
-If you are a rust programmer, you probably have `cargo` installed and you can just
+If you are a Rust programmer, you probably have `cargo` installed and you can just
 run `cargo install tantivy-cli`.
 
 Alternatively, if you are on 64-bit Linux, you can directly download a
@@ -136,7 +136,7 @@ Answer the questions as follows:
 ```
 
 After the wizard has finished, a `meta.json` should exist in `wikipedia-index/meta.json`.
-It is a fairly human readable JSON, so you may check its content.
+It is a fairly human readable JSON, so you can check its content.
 
 It contains two sections:
 - segments (currently empty, but we will change that soon)
@@ -182,11 +182,12 @@ to check what is happening.
     ls ./wikipedia-index
 ```
 
-If you indexed the 5 million articles, you should see a lot of new files, all with the following format
+If you indexed the 5 million articles, you should see a lot of new files, all with the following format:
+
 The main file is `meta.json`.
 
 Our index is in fact divided in segments. Each segment acts as an individual smaller index.
-Its named is simply a uuid. 
+Its name is simply a uuid. 
 
 
 
@@ -211,7 +212,7 @@ the following [url](http://localhost:3000/api/?q=barack+obama&explain=true&nhits
 # Optimizing the index: `merge`
 
 Each of tantivy's indexer threads closes a new segment every 100K documents (this is completely arbitrary at the moment).
-You should have more than 50 segments in your dictionary.
+You should currently have more than 50 segments in your dictionary.
 
 Having that many segments hurts your query performance (well, mostly the fast ones).
 Tantivy merge will merge your segments into one. 
