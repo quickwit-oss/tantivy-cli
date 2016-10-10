@@ -38,3 +38,10 @@ env_logger = "0.3"
 [[bin]]
 name = "tantivy"
 path = "src/main.rs"
+
+
+[profile.release]
+opt-level = 3
+debug = false
+lto = true
+debug-assertions = false

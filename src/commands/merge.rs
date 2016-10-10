@@ -14,7 +14,7 @@ pub fn run_merge_cli(argmatch: &ArgMatches) -> Result<(), String> {
 
 fn run_merge(path: PathBuf) -> tantivy::Result<()> {
     let index = try!(Index::open(&path));
-    let segments = try!(index.segments());
+    let segments = index.searchable_segments();
     let mut index_writer = try!(index.writer(HEAP_SIZE));
     index_writer.merge(&segments)
 }

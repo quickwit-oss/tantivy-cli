@@ -68,7 +68,6 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_pe
     }
     drop(doc_sender);
 
-
     let mut index_writer = try!(
         if num_threads > 0 {
             index.writer_with_num_threads(num_threads, buffer_size_per_thread)
@@ -80,7 +79,7 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_pe
 
 
     let index_result = index_documents(&mut index_writer, doc_receiver);
-    match index_result {
+    try!(match index_result {
         Ok(docstamp) => {
             println!("Commit succeed, docstamp at {}", docstamp);
             Ok(())
@@ -91,7 +90,9 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_pe
             println!("Rollback succeeded");
             Err(e)
         }
-    }
+    });
+    
+    index_writer.wait_merging_threads()
 }
 
 fn index_documents(index_writer: &mut IndexWriter, doc_receiver: chan::Receiver<Document>) -> tantivy::Result<u64> {
