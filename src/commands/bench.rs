@@ -1,7 +1,6 @@
 use tantivy::Index;
 use tantivy::schema::{Field, Schema};
 use tantivy::query::QueryParser;
-use tantivy::query::Query;
 use std::path::Path;
 use tantivy::TimerTree;
 use std::io::BufReader;
@@ -67,7 +66,7 @@ fn run_bench(index_path: &Path,
     for _ in 0..num_repeat {
         for query_txt in &queries {
             let query = query_parser.parse_query(&query_txt).unwrap();
-            let num_terms = query.num_terms();
+            // let num_terms = query.num_terms();
             let mut top_collector = TopCollector::with_limit(10);
             let mut count_collector = CountCollector::default();
             let timing;
@@ -75,7 +74,7 @@ fn run_bench(index_path: &Path,
                 let mut collector = chain().push(&mut top_collector).push(&mut count_collector);
                 timing = try!(query.search(&searcher, &mut collector).map_err(|e| format!("Failed while searching query {:?}.\n\n{:?}", query_txt, e)));
             }
-            println!("{}\t{}\t{}\t{}", query_txt, num_terms, count_collector.count(), timing.total_time());
+            println!("{}\t{}\t{}", query_txt, count_collector.count(), timing.total_time());
         }
     }
     

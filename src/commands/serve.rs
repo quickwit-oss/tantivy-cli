@@ -35,8 +35,6 @@ use tantivy::collector::CountCollector;
 use tantivy::collector::TopCollector;
 use tantivy::Document;
 use tantivy::Index;
-use tantivy::query::Explanation;
-use tantivy::query::Query;
 use tantivy::query::QueryParser;
 use tantivy::schema::Field;
 use tantivy::schema::FieldType;
@@ -65,7 +63,6 @@ struct Serp {
 #[derive(RustcEncodable)]
 struct Hit {
     doc: NamedFieldDocument,
-    explain: Option<Explanation>,
 }
 
 struct IndexServer {
@@ -101,10 +98,9 @@ impl IndexServer {
         }
     }
 
-    fn create_hit(&self, doc: &Document, explain: Option<Explanation>) -> Hit {
+    fn create_hit(&self, doc: &Document) -> Hit {
         Hit {
-            doc: self.schema.to_named_doc(&doc),
-            explain: explain,
+            doc: self.schema.to_named_doc(&doc)
         }
     }
     
@@ -127,14 +123,7 @@ impl IndexServer {
                 .iter()
                 .map(|doc_address| {
                     let doc: Document = searcher.doc(doc_address).unwrap();
-                    let explanation;
-                    if explain {
-                        explanation = Some(query.explain(&searcher, doc_address).unwrap());
-                    }
-                    else {
-                        explanation = None;
-                    }
-                    self.create_hit(&doc, explanation)
+                    self.create_hit(&doc)
                 })
                 .collect()
         };
