@@ -164,7 +164,7 @@ Make sure to uncompress the file
     bunzip2 wiki-articles.json.bz2
 ```
 
-If you are in a rush you can [download 100 articles in the right format here](http://fulmicoton.com/tantivy-files/wiki-articles-1000.json).
+If you are in a rush you can [download 100 articles in the right format here (11 MB)](http://fulmicoton.com/tantivy-files/wiki-articles-1000.json).
 
 The `index` command will index your document.
 By default it will use as many threads as there are cores on your machine.
