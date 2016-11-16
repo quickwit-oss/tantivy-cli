@@ -83,7 +83,9 @@ impl IndexServer {
             .filter(
                 |&(_, ref field_entry)| {
                     match *field_entry.field_type() {
-                        FieldType::Str(_) => true,
+                        FieldType::Str(ref text_field_options) => {
+                            text_field_options.get_indexing_options().is_indexed()
+                        },
                         FieldType::U32(_) => false
                     }
                 }
@@ -105,7 +107,7 @@ impl IndexServer {
     }
     
     fn search(&self, q: String, num_hits: usize, explain: bool) -> tantivy::Result<Serp> {
-        let query = self.query_parser.parse_query(&q).unwrap();
+        let query = self.query_parser.parse_query(&q).expect("Parsing the query failed");
         let searcher = self.index.searcher();
         let mut count_collector = CountCollector::default();
         let mut top_collector = TopCollector::with_limit(num_hits);
