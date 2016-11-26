@@ -83,6 +83,17 @@ fn main() {
                     .default_value("100000000"))
         )
         .subcommand(
+            SubCommand::with_name("search")
+                .about("Search an index.")
+                .arg(index_arg.clone())
+                .arg(Arg::with_name("query")
+                    .short("q")
+                    .long("query")
+                    .value_name("query")
+                    .help("Query")
+                    .required(true))
+        )
+        .subcommand(
             SubCommand::with_name("bench")
                 .about("Run a benchmark on your index")
                 .arg(index_arg.clone())
@@ -112,6 +123,7 @@ fn main() {
         "new" => run_new_cli,
         "index" => run_index_cli,
         "serve" => run_serve_cli,
+        "search" => run_search_cli,
         "merge" => run_merge_cli,
         "bench" => run_bench_cli,
         _ => panic!("Subcommand {} is unknown", subcommand)
