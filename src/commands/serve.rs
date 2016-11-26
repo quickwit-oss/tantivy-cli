@@ -4,14 +4,13 @@
 /// and it takes the following query string argument
 /// 
 /// - `q=` :    your query
-//  - `nhits`:  the number of hits that should be returned. (default to 10)  
-/// - `explain=` : if true returns some information about the score.  
+///  - `nhits`:  the number of hits that should be returned. (default to 10)   
 ///
 ///
 /// For instance, the following call should return the 20 most relevant
 /// hits for fulmicoton.
 ///
-///     http://localhost:3000/api/?q=fulmicoton&explain=false&nhits=20
+///     http://localhost:3000/api/?q=fulmicoton&&nhits=20
 ///
 
 
@@ -106,7 +105,7 @@ impl IndexServer {
         }
     }
     
-    fn search(&self, q: String, num_hits: usize, explain: bool) -> tantivy::Result<Serp> {
+    fn search(&self, q: String, num_hits: usize) -> tantivy::Result<Serp> {
         let query = self.query_parser.parse_query(&q).expect("Parsing the query failed");
         let searcher = self.index.searcher();
         let mut count_collector = CountCollector::default();
@@ -164,14 +163,10 @@ fn search(req: &mut Request) -> IronResult<Response> {
                 .get("nhits")
                 .and_then(|nhits_str| usize::from_str(&nhits_str[0]).ok())
                 .unwrap_or(10);
-            let explain: bool = qs_map
-                .get("explain")
-                .map(|s| &s[0] == &"true")
-                .unwrap_or(false);
             let query = try!(qs_map
                 .get("q")
                 .ok_or_else(|| IronError::new(StringError(String::from("Parameter q is missing from the query")), status::BadRequest)))[0].clone();
-            let serp = index_server.search(query, num_hits, explain).unwrap();
+            let serp = index_server.search(query, num_hits).unwrap();
             let resp_json = as_pretty_json(&serp).indent(4);
             let content_type = "application/json".parse::<Mime>().unwrap();
             Ok(Response::with((content_type, status::Ok, format!("{}", resp_json))))

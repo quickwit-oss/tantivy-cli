@@ -143,8 +143,7 @@ fn run_new(directory: PathBuf) -> tantivy::Result<()> {
     let schema = schema_builder.build();
     let schema_json = format!("{}", json::as_pretty_json(&schema));
     println!("\n{}\n", Style::new().fg(Green).paint(schema_json));
-    let mut index = try!(Index::create(&directory, schema));
-    // index.save_metas()
+    Index::create(&directory, schema)?;
     Ok(())
 }
 
