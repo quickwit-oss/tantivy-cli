@@ -4,14 +4,13 @@
 /// and it takes the following query string argument
 /// 
 /// - `q=` :    your query
-//  - `nhits`:  the number of hits that should be returned. (default to 10)  
-/// - `explain=` : if true returns some information about the score.  
+///  - `nhits`:  the number of hits that should be returned. (default to 10)   
 ///
 ///
 /// For instance, the following call should return the 20 most relevant
 /// hits for fulmicoton.
 ///
-///     http://localhost:3000/api/?q=fulmicoton&explain=false&nhits=20
+///     http://localhost:3000/api/?q=fulmicoton&&nhits=20
 ///
 
 
@@ -35,10 +34,7 @@ use tantivy::collector::CountCollector;
 use tantivy::collector::TopCollector;
 use tantivy::Document;
 use tantivy::Index;
-use tantivy::query::Explanation;
-use tantivy::query::Query;
 use tantivy::query::QueryParser;
-use tantivy::Result;
 use tantivy::schema::Field;
 use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
@@ -46,12 +42,12 @@ use tantivy::schema::Schema;
 use tantivy::TimerTree;
 use urlencoded::UrlEncodedQuery;
 
-pub fn run_serve_cli(matches: &ArgMatches) -> tantivy::Result<()> {
+pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
     let port = value_t!(matches, "port", u16).unwrap_or(3000u16);
     let host_str = matches.value_of("host").unwrap_or("localhost");
     let host = format!("{}:{}", host_str, port);
-    run_serve(index_directory, &host)   
+    run_serve(index_directory, &host).map_err(|e| format!("{:?}", e))
 }
 
 
@@ -66,7 +62,6 @@ struct Serp {
 #[derive(RustcEncodable)]
 struct Hit {
     doc: NamedFieldDocument,
-    explain: Option<Explanation>,
 }
 
 struct IndexServer {
@@ -87,7 +82,9 @@ impl IndexServer {
             .filter(
                 |&(_, ref field_entry)| {
                     match *field_entry.field_type() {
-                        FieldType::Str(_) => true,
+                        FieldType::Str(ref text_field_options) => {
+                            text_field_options.get_indexing_options().is_indexed()
+                        },
                         FieldType::U32(_) => false
                     }
                 }
@@ -102,24 +99,23 @@ impl IndexServer {
         }
     }
 
-    fn create_hit(&self, doc: &Document, explain: Option<Explanation>) -> Hit {
+    fn create_hit(&self, doc: &Document) -> Hit {
         Hit {
-            doc: self.schema.to_named_doc(&doc),
-            explain: explain,
+            doc: self.schema.to_named_doc(&doc)
         }
     }
     
-    fn search(&self, q: String, num_hits: usize, explain:  bool) -> Result<Serp> {
-        let query = self.query_parser.parse_query(&q).unwrap();
-        let searcher = self.index.searcher().unwrap();
-        let mut count_collector = CountCollector::new();
+    fn search(&self, q: String, num_hits: usize) -> tantivy::Result<Serp> {
+        let query = self.query_parser.parse_query(&q).expect("Parsing the query failed");
+        let searcher = self.index.searcher();
+        let mut count_collector = CountCollector::default();
         let mut top_collector = TopCollector::with_limit(num_hits);
-        let mut timer_tree = TimerTree::new();
+        let mut timer_tree = TimerTree::default();
         {
             let _search_timer = timer_tree.open("search");
             let mut chained_collector = collector::chain()
-                .add(&mut top_collector)
-                .add(&mut count_collector);
+                .push(&mut top_collector)
+                .push(&mut count_collector);
             try!(query.search(&searcher, &mut chained_collector));
         }
         let hits: Vec<Hit> = {
@@ -128,14 +124,7 @@ impl IndexServer {
                 .iter()
                 .map(|doc_address| {
                     let doc: Document = searcher.doc(doc_address).unwrap();
-                    let explanation;
-                    if explain {
-                        explanation = Some(query.explain(&searcher, doc_address).unwrap());
-                    }
-                    else {
-                        explanation = None;
-                    }
-                    self.create_hit(&doc, explanation)
+                    self.create_hit(&doc)
                 })
                 .collect()
         };
@@ -174,14 +163,10 @@ fn search(req: &mut Request) -> IronResult<Response> {
                 .get("nhits")
                 .and_then(|nhits_str| usize::from_str(&nhits_str[0]).ok())
                 .unwrap_or(10);
-            let explain: bool = qs_map
-                .get("explain")
-                .map(|s| &s[0] == &"true")
-                .unwrap_or(false);
             let query = try!(qs_map
                 .get("q")
                 .ok_or_else(|| IronError::new(StringError(String::from("Parameter q is missing from the query")), status::BadRequest)))[0].clone();
-            let serp = index_server.search(query, num_hits, explain).unwrap();
+            let serp = index_server.search(query, num_hits).unwrap();
             let resp_json = as_pretty_json(&serp).indent(4);
             let content_type = "application/json".parse::<Mime>().unwrap();
             Ok(Response::with((content_type, status::Ok, format!("{}", resp_json))))

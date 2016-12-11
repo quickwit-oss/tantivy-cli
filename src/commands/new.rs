@@ -12,9 +12,9 @@ use std::ascii::AsciiExt;
 use rustc_serialize::json;
 
 
-pub fn run_new_cli(matches: &ArgMatches) -> tantivy::Result<()> {
+pub fn run_new_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
-    run_new(index_directory)   
+    run_new(index_directory).map_err(|e| format!("{:?}" , e))
 }
 
 
@@ -72,8 +72,8 @@ fn prompt_yn(msg: &str) -> bool {
 }
 
 
-fn ask_add_field_text(field_name: &str, schema: &mut Schema) {
-    let mut text_options = TextOptions::new();
+fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
+    let mut text_options = TextOptions::default();
     if prompt_yn("Should the field be stored") {
         text_options = text_options.set_stored();
     }
@@ -100,12 +100,12 @@ fn ask_add_field_text(field_name: &str, schema: &mut Schema) {
         TextIndexingOptions::Unindexed
     };
     text_options = text_options.set_indexing_options(indexing_options);
-    schema.add_text_field(field_name, text_options);
+    schema_builder.add_text_field(field_name, text_options);
 }
 
 
-fn ask_add_field_u32(field_name: &str, schema: &mut Schema) {
-    let mut u32_options = U32Options::new();
+fn ask_add_field_u32(field_name: &str, schema_builder: &mut SchemaBuilder) {
+    let mut u32_options = U32Options::default();
     if prompt_yn("Should the field be stored") {
         u32_options = u32_options.set_stored();
     }
@@ -115,34 +115,35 @@ fn ask_add_field_u32(field_name: &str, schema: &mut Schema) {
     if prompt_yn("Should the field be indexed") {
         u32_options = u32_options.set_indexed();
     }
-    schema.add_u32_field(field_name, u32_options);
+    schema_builder.add_u32_field(field_name, u32_options);
 }
 
-fn ask_add_field(schema: &mut Schema) {
+fn ask_add_field(schema_builder: &mut SchemaBuilder) {
     println!("\n\n");
     let field_name = prompt_input("New field name ", field_name_validate);
     let text_or_integer = prompt_options("Text or unsigned 32-bit integer", vec!('T', 'I'));
     if text_or_integer =='T' {
-        ask_add_field_text(&field_name, schema);
+        ask_add_field_text(&field_name, schema_builder);
     }
     else {
-        ask_add_field_u32(&field_name, schema);        
+        ask_add_field_u32(&field_name, schema_builder);        
     }
 }
 
 fn run_new(directory: PathBuf) -> tantivy::Result<()> {
     println!("\n{} ", Style::new().bold().fg(Green).paint("Creating new index"));
-    println!("{} ", Style::new().bold().fg(Green).paint("Let's define its schema!"));
-    let mut schema = Schema::new();
+    println!("{} ", Style::new().bold().fg(Green).paint("Let's define it's schema!"));
+    let mut schema_builder = SchemaBuilder::default();
     loop  {
-        ask_add_field(&mut schema);
+        ask_add_field(&mut schema_builder);
         if !prompt_yn("Add another field") {
             break;
         }
     }
+    let schema = schema_builder.build();
     let schema_json = format!("{}", json::as_pretty_json(&schema));
     println!("\n{}\n", Style::new().fg(Green).paint(schema_json));
-    let mut index = try!(Index::create(&directory, schema));
-    index.save_metas()
+    Index::create(&directory, schema)?;
+    Ok(())
 }
 

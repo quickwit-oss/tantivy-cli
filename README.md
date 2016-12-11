@@ -142,7 +142,6 @@ It contains two sections:
 - segments (currently empty, but we will change that soon)
 - schema 
 
-
  
 
 # Indexing the document: `index`
@@ -163,34 +162,39 @@ Make sure to decompress the file
     bunzip2 wiki-articles.json.bz2
 ```
 
-If you are in a rush you can [download 100 articles in the right format here](http://fulmicoton.com/tantivy-files/wiki-articles-1000.json).
+If you are in a rush you can [download 100 articles in the right format here (11 MB)](http://fulmicoton.com/tantivy-files/wiki-articles-1000.json).
 
 The `index` command will index your document.
-By default it will use as many threads as there are cores on your machine.
-You can change the number of threads by passing it the `-t` parameter.
+By default it will use as 3 thread, each with a buffer size of 1GB split a
+accross these threads. 
 
-On my computer (8 core Xeon(R) CPU X3450  @ 2.67GHz), it will take around 6 minutes.
 
 ```
     cat wiki-articles.json | tantivy index -i ./wikipedia-index
 ```
 
-While it is indexing, you can peek at the index directory
-to check what is happening.
+You can change the number of threads by passing it the `-t` parameter, and the total
+buffer size used by the threads heap by using the `-m`. Note that tantivy's memory usage
+is greater than just this buffer size parameter.
+
+On my computer (8 core Xeon(R) CPU X3450  @ 2.67GHz), on 8 threads, indexing wikipedia takes around 9 minutes.
+
+
+While tantivy is indexing, you can peek at the index directory to check what is happening.
 
 ```bash
     ls ./wikipedia-index
 ```
 
-If you indexed the 5 million articles, you should see a lot of new files, all with the following format:
-
 The main file is `meta.json`.
 
+You should also see a lot of files with a UUID as filename, and different extensions.
 Our index is in fact divided in segments. Each segment acts as an individual smaller index.
 Its name is simply a uuid. 
 
-
-
+If you decided to index the complete wikipedia, you may also see some of these files disappear.
+Having too many segments can hurt search performance, so tantivy actually automatically starts
+merging segments. 
 
 # Serve the search index: `serve`
 
@@ -204,26 +208,30 @@ You can run it with the following command.
 By default, it will serve on port `3000`.
 
 You can search for the top 20 most relevant documents for the query `Barack Obama` by accessing
-the following [url](http://localhost:3000/api/?q=barack+obama&explain=true&nhits=20) in your browser
+the following [url](http://localhost:3000/api/?q=barack+obama&nhits=20) in your browser
 
-    http://localhost:3000/api/?q=barack+obama&explain=true&nhits=20
+    http://localhost:3000/api/?q=barack+obama&nhits=20
 
+By default this query is treated as `barack OR obama`.
+You can also search for documents that contains both term, by adding a `+` sign before the terms in your query.
 
-# Optimizing the index: `merge`
+    http://localhost:3000/api/?q=%2Bbarack%20%2Bobama%0A&nhits=20
+    
+Also, `-` makes it possible to remove documents the documents containing a specific term.
 
-Each of tantivy's indexer threads is building its own independant segment.
-When its buffer is full, it closes its running segment, and starts working on a new one.
-You should currently have more than 50 segments in your directory.
+    http://localhost:3000/api/?q=-barack%20%2Bobama%0A&nhits=20
+    
+Finally tantivy handle phrase queries.
 
-Having that many segments can hurt your query performance.
-Calling `tantivy merge` will merge your segments into one. 
+    http://localhost:3000/api/?q=%22barack%20obama%22&nhits=20
+    
+
+# Search the index via the command line
+
+You may also use the `search` command to stream all documents matching a specific query.
+The documents are returned in an unspecified order.
 
 ```
-    tantivy merge -i ./wikipedia-index
+    tantivy search -i wikipedia-index -q "barack obama"
 ```
 
-(The command takes less than 4 minutes on my computer)
-
-Note that your files are still there even after having run the command.
-However, `meta.json` only lists one of the segments.
-You will still need to remove the files manually.

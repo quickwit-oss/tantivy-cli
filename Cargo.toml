@@ -1,37 +1,43 @@
 [package]
 name = "tantivy-cli"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Paul Masurel <paul.masurel@gmail.com>"]
 
 description = """Command line interface for Tantivy, a search engine library."""
-documentation = "https://github.com/fulmicoton/tantivy"
-homepage = "https://github.com/fulmicoton/tantivy"
-repository = "https://github.com/fulmicoton/tantivy"
+documentation = "https://github.com/tantivy-search/tantivy-cli"
+homepage = "https://github.com/tantivy-search/tantivy-cli"
+repository = "https://github.com/tantivy-search/tantivy-cli"
 
 readme = "README.md"
 keywords = ["search", "information", "retrieval"]
 license = "MIT"
 
 [dependencies]
-#tantivy = { path = "../tantivy" }
-tantivy = "0.1.1"
-time = "0.1.34"
+
+time = "0.1"
 iron = "0.4"
-staticfile = "0.3.0"
-rustc-serialize = "0.3.16"
-persistent="0.2.0"
+staticfile = "0.3"
+rustc-serialize = "0.3"
+persistent="0.2"
 clap = "2"
-ansi_term = "0.8.0"
+ansi_term = "0.8"
 urlencoded = "0.4"
-mount = "0.2.1"
-
-
-
-# [dependencies.clap]
-#version = "2"
-#default-features = false
-#features = [ "suggestions", "color" ]
+mount = "0.2"
+chan = "0.1"
+bincode = "0.4"
+byteorder = "0.5"
+log = "0.3"
+env_logger = "0.3"
+tantivy = "0.2.0"
 
 [[bin]]
 name = "tantivy"
 path = "src/main.rs"
+
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+lto = true
+
