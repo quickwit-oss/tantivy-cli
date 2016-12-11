@@ -1,7 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
-`tantivy-cli` is the project hosting the command line interface for [tantivy](https://github.com/fulmicoton/tantivy), a search engine project.
+`tantivy-cli` is the project hosting the command line interface for [tantivy](https://github.com/tantivy-search/tantivy), a search engine project.
 
 
 # Tutorial: Indexing Wikipedia with Tantivy CLI
@@ -35,14 +35,14 @@ Let's create a directory in which your index will be stored.
 
 
 We will now initialize the index and create its schema.
-The [schema](http://fulmicoton.com/tantivy/tantivy/schema/index.html) defines
+The [schema](https://tantivy-search.github.io/tantivy/tantivy/schema/index.html) defines
 the list of your fields, and for each field:
 - its name 
 - its type, currently `u32` or `str`
 - how it should be indexed.
 
 You can find more information about the latter on 
-[tantivy's schema documentation page](http://fulmicoton.com/tantivy/tantivy/schema/index.html
+[tantivy's schema documentation page](https://tantivy-search.github.io/tantivy/tantivy/schema/index.html
 
 In our case, our documents will contain
 * a title
