@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate clap;
 #[macro_use]
+extern crate version;
+#[macro_use]
 extern crate rustc_serialize;
 #[macro_use]
 extern crate log;
@@ -35,7 +37,7 @@ fn main() {
 
     let cli_options = App::new("Tantivy")
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .version("0.1")
+        .version(version!())
         .author("Paul Masurel <paul.masurel@gmail.com>")
         .about("Tantivy Search Engine's command line interface.")
         .subcommand(
