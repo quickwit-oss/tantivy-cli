@@ -13,7 +13,6 @@ keywords = ["search", "information", "retrieval"]
 license = "MIT"
 
 [dependencies]
-
 time = "0.1"
 iron = "0.4"
 staticfile = "0.3"
@@ -28,8 +27,13 @@ bincode = "0.4"
 byteorder = "0.5"
 log = "0.3"
 env_logger = "0.3"
-tantivy = "0.2.0"
 version = "2"
+
+
+[dependencies.tantivy]
+version = "0.2.0"
+features = []
+default-features = false
 
 [[bin]]
 name = "tantivy"
@@ -41,4 +45,8 @@ opt-level = 3
 debug = false
 debug-assertions = false
 lto = true
+
+
+[features]
+default = ["tantivy/simdcompression"]
 
