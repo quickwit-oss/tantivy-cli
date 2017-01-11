@@ -1,4 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![beacon for google analytics](https://ga-beacon.appspot.com/UA-88834340-1/tantivy-cli/README)
 
 
 `tantivy-cli` is the project hosting the command line interface for [tantivy](https://github.com/tantivy-search/tantivy), a search engine project.
