@@ -43,7 +43,7 @@ the list of your fields, and for each field:
 - how it should be indexed.
 
 You can find more information about the latter on 
-[tantivy's schema documentation page](https://tantivy-search.github.io/tantivy/tantivy/schema/index.html
+[tantivy's schema documentation page](https://tantivy-search.github.io/tantivy/tantivy/schema/index.html)
 
 In our case, our documents will contain
 * a title
