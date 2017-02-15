@@ -15,8 +15,9 @@ In this tutorial, we will create a brand new index with the articles of English 
 
 There are a couple ways to install `tantivy-cli`.
 
-If you are a Rust programmer, you probably have `cargo` installed and you can just
-run `cargo install tantivy-cli` or `rustup run nightly cargo install tantivy-cli`.
+If you are a Rust programmer, you probably have `cargo` and `rustup` installed and you can just
+run `rustup run nightly cargo install tantivy-cli`. (`cargo install tantivy-cli` will work
+as well if nightly is your default toolchain).
 
 Alternatively, if you are on 64-bit Linux, you can directly download a
 static binary:  [binaries/linux_x86_64/](http://fulmicoton.com/tantivy-files/binaries/0.2.0/linux_x86_64/tantivy),
