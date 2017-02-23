@@ -93,7 +93,7 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
             }
         }
         else {
-            TextIndexingOptions::Unindexed
+            TextIndexingOptions::Untokenized
         }
     }
     else {
