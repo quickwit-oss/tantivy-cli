@@ -28,11 +28,11 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
                     FieldType::Str(ref text_field_options) => {
                         text_field_options.get_indexing_options().is_indexed()
                     },
-                    FieldType::U32(_) => false
+                    FieldType::U64(_) => false
                 }
             }
         )
-        .map(|(i, _)| Field(i as u8))
+        .map(|(i, _)| Field(i as u32))
         .collect();
     let query_parser = QueryParser::new(schema.clone(), default_fields);
     let query = query_parser.parse_query(query)?;

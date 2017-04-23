@@ -82,9 +82,10 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_pe
 
 
     let index_result = index_documents(&mut index_writer, doc_receiver);
-    try!(match index_result {
+    match index_result {
         Ok(docstamp) => {
             println!("Commit succeed, docstamp at {}", docstamp);
+            index_writer.wait_merging_threads()?;
             Ok(())
         }
         Err(e) => {
@@ -93,9 +94,9 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_pe
             println!("Rollback succeeded");
             Err(e)
         }
-    });
+    }
     
-    index_writer.wait_merging_threads()
+    
 }
 
 fn index_documents(index_writer: &mut IndexWriter, doc_receiver: chan::Receiver<Document>) -> tantivy::Result<u64> {
@@ -103,7 +104,7 @@ fn index_documents(index_writer: &mut IndexWriter, doc_receiver: chan::Receiver<
     let mut num_docs = 0;
     let mut cur = PreciseTime::now();
     for doc in doc_receiver {
-        try!(index_writer.add_document(doc));
+        index_writer.add_document(doc);
         if num_docs > 0 && (num_docs % group_count == 0) {
             println!("{} Docs", num_docs);
             let new = PreciseTime::now();

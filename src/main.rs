@@ -1,8 +1,8 @@
+#![feature(conservative_impl_trait)]
 #[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate version;
-#[macro_use]
 extern crate rustc_serialize;
 #[macro_use]
 extern crate log;
@@ -18,6 +18,7 @@ extern crate ansi_term;
 extern crate mount;
 extern crate bincode;
 extern crate byteorder;
+extern crate futures;
 
 use clap::{AppSettings, Arg, App, SubCommand};
 mod commands;

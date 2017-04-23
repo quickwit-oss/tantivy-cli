@@ -104,18 +104,18 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
 }
 
 
-fn ask_add_field_u32(field_name: &str, schema_builder: &mut SchemaBuilder) {
-    let mut u32_options = U32Options::default();
+fn ask_add_field_u64(field_name: &str, schema_builder: &mut SchemaBuilder) {
+    let mut u64_options = IntOptions::default();
     if prompt_yn("Should the field be stored") {
-        u32_options = u32_options.set_stored();
+        u64_options = u64_options.set_stored();
     }
     if prompt_yn("Should the field be fast") {
-        u32_options = u32_options.set_fast();
+        u64_options = u64_options.set_fast();
     }
     if prompt_yn("Should the field be indexed") {
-        u32_options = u32_options.set_indexed();
+        u64_options = u64_options.set_indexed();
     }
-    schema_builder.add_u32_field(field_name, u32_options);
+    schema_builder.add_u64_field(field_name, u64_options);
 }
 
 fn ask_add_field(schema_builder: &mut SchemaBuilder) {
@@ -126,7 +126,7 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
         ask_add_field_text(&field_name, schema_builder);
     }
     else {
-        ask_add_field_u32(&field_name, schema_builder);        
+        ask_add_field_u64(&field_name, schema_builder);        
     }
 }
 

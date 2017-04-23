@@ -26,14 +26,10 @@ chan = "0.1"
 bincode = "0.4"
 byteorder = "0.5"
 log = "0.3"
+futures = "*"
 env_logger = "0.3"
 version = "2"
-
-
-[dependencies.tantivy]
-version = "0.2.0"
-features = []
-default-features = false
+tantivy = { path="../tantivy", branch="tantivy-imhotep"}
 
 [[bin]]
 name = "tantivy"

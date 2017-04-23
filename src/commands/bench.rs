@@ -29,8 +29,7 @@ fn extract_search_fields(schema: &Schema) -> Vec<Field> {
           .filter(|&(_, field_entry)| {
               field_entry.is_indexed()
           })
-          .map(|(field_id, _)| field_id as u8)
-          .map(Field)
+          .map(|(field_id, _)| Field(field_id as u32))
           .collect()
 }
 
