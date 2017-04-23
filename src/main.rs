@@ -2,7 +2,6 @@
 extern crate clap;
 #[macro_use]
 extern crate version;
-#[macro_use]
 extern crate rustc_serialize;
 #[macro_use]
 extern crate log;
@@ -10,6 +9,7 @@ extern crate env_logger;
 extern crate tantivy;
 extern crate time;
 extern crate persistent;
+extern crate futures;
 extern crate urlencoded;
 extern crate iron;
 extern crate chan;
