@@ -28,6 +28,7 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
                     FieldType::Str(ref text_field_options) => {
                         text_field_options.get_indexing_options().is_indexed()
                     },
+                    FieldType::I64(_) => false,
                     FieldType::U64(_) => false
                 }
             }

@@ -85,7 +85,9 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_pe
     match index_result {
         Ok(docstamp) => {
             println!("Commit succeed, docstamp at {}", docstamp);
+            println!("Waiting for merging threads");
             index_writer.wait_merging_threads()?;
+            println!("Terminated successfully!");
             Ok(())
         }
         Err(e) => {
@@ -95,8 +97,6 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_pe
             Err(e)
         }
     }
-    
-    
 }
 
 fn index_documents(index_writer: &mut IndexWriter, doc_receiver: chan::Receiver<Document>) -> tantivy::Result<u64> {

@@ -85,7 +85,8 @@ impl IndexServer {
                         FieldType::Str(ref text_field_options) => {
                             text_field_options.get_indexing_options().is_indexed()
                         },
-                        FieldType::U64(_) => false
+                        FieldType::U64(_) => false,
+                        FieldType::I64(_) => false
                     }
                 }
             )

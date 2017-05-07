@@ -10,6 +10,7 @@ extern crate env_logger;
 extern crate tantivy;
 extern crate time;
 extern crate persistent;
+extern crate futures;
 extern crate urlencoded;
 extern crate iron;
 extern crate chan;
