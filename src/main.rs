@@ -19,7 +19,6 @@ extern crate ansi_term;
 extern crate mount;
 extern crate bincode;
 extern crate byteorder;
-extern crate futures;
 
 use clap::{AppSettings, Arg, App, SubCommand};
 mod commands;
