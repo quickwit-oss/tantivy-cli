@@ -18,10 +18,10 @@ use clap::ArgMatches;
 use iron::mime::Mime;
 use iron::prelude::*;
 use iron::status;
+use serde_json;
 use iron::typemap::Key;
 use mount::Mount;
 use persistent::Read;
-use rustc_serialize::json::as_pretty_json;
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Debug};
@@ -51,7 +51,7 @@ pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
 }
 
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 struct Serp {
     q: String,
     num_hits: usize,
@@ -59,7 +59,7 @@ struct Serp {
     timings: TimerTree,
 }
 
-#[derive(RustcEncodable)]
+#[derive(Serialize)]
 struct Hit {
     doc: NamedFieldDocument,
 }
@@ -85,11 +85,11 @@ impl IndexServer {
                         FieldType::Str(ref text_field_options) => {
                             text_field_options.get_indexing_options().is_indexed()
                         },
-                        FieldType::U32(_) => false
+                        _ => false
                     }
                 }
             )
-            .map(|(i, _)| Field(i as u8))
+            .map(|(i, _)| Field(i as u32))
             .collect();
         let query_parser = QueryParser::new(schema.clone(), default_fields);
         IndexServer {
@@ -167,7 +167,7 @@ fn search(req: &mut Request) -> IronResult<Response> {
                 .get("q")
                 .ok_or_else(|| IronError::new(StringError(String::from("Parameter q is missing from the query")), status::BadRequest)))[0].clone();
             let serp = index_server.search(query, num_hits).unwrap();
-            let resp_json = as_pretty_json(&serp).indent(4);
+            let resp_json = serde_json::to_string_pretty(&serp).unwrap();
             let content_type = "application/json".parse::<Mime>().unwrap();
             Ok(Response::with((content_type, status::Ok, format!("{}", resp_json))))
         })

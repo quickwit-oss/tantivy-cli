@@ -2,7 +2,7 @@
 extern crate clap;
 #[macro_use]
 extern crate version;
-extern crate rustc_serialize;
+extern crate serde_json;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
@@ -18,6 +18,9 @@ extern crate ansi_term;
 extern crate mount;
 extern crate bincode;
 extern crate byteorder;
+
+#[macro_use]
+extern crate serde_derive;
 
 use clap::{AppSettings, Arg, App, SubCommand};
 mod commands;
