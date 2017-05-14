@@ -1,5 +1,4 @@
 use clap::ArgMatches;
-use rustc_serialize::json::as_json;
 use std::convert::From;
 use std::path::Path;
 use std::path::PathBuf;
@@ -7,6 +6,7 @@ use tantivy;
 use tantivy::Index;
 use tantivy::query::QueryParser;
 use tantivy::schema::Field;
+use serde_json;
 use tantivy::schema::FieldType;
 
 pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
@@ -28,8 +28,7 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
                     FieldType::Str(ref text_field_options) => {
                         text_field_options.get_indexing_options().is_indexed()
                     },
-                    FieldType::I64(_) => false,
-                    FieldType::U64(_) => false
+                    _ => false
                 }
             }
         )
@@ -46,7 +45,7 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
             let doc_id = scorer.doc();
             let doc = segment_reader.doc(doc_id)?;
             let named_doc = schema.to_named_doc(&doc);
-            println!("{}", as_json(&named_doc));
+            println!("{}", serde_json::to_string(&named_doc).unwrap());
         }
     }
     Ok(())

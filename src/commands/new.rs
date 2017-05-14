@@ -9,7 +9,7 @@ use ansi_term::Style;
 use ansi_term::Colour::{Red, Blue, Green};
 use std::io::Write;
 use std::ascii::AsciiExt;
-use rustc_serialize::json;
+use serde_json;
 
 
 pub fn run_new_cli(matches: &ArgMatches) -> Result<(), String> {
@@ -141,7 +141,7 @@ fn run_new(directory: PathBuf) -> tantivy::Result<()> {
         }
     }
     let schema = schema_builder.build();
-    let schema_json = format!("{}", json::as_pretty_json(&schema));
+    let schema_json = format!("{}", serde_json::to_string_pretty(&schema).unwrap());
     println!("\n{}\n", Style::new().fg(Green).paint(schema_json));
     Index::create(&directory, schema)?;
     Ok(())

@@ -40,7 +40,7 @@ We will now initialize the index and create its schema.
 The [schema](https://tantivy-search.github.io/tantivy/tantivy/schema/index.html) defines
 the list of your fields, and for each field:
 - its name 
-- its type, currently `u32` or `str`
+- its type, currently `u64`, `i64` or `str`
 - how it should be indexed.
 
 You can find more information about the latter on 
