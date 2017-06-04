@@ -87,6 +87,10 @@ fn main() {
                     .value_name("memory_size")
                     .help("Total memory_size in bytes. It will be split for the different threads.")
                     .default_value("1000000000"))
+                .arg(Arg::with_name("optimize")
+                    .short("o")
+                    .long("optimize")
+                    .help("Merge all index into one after indexing."))
         )
         .subcommand(
             SubCommand::with_name("search")

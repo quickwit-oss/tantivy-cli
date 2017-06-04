@@ -1,9 +1,11 @@
 extern crate tantivy;
 
 use tantivy::Index;
+use tantivy::{Error, ErrorKind, ResultExt};
 use std::path::PathBuf;
 use clap::ArgMatches;
 use futures::Future;
+use time::PreciseTime;
 
 const HEAP_SIZE: usize = 300_000_000;
 
@@ -20,18 +22,31 @@ pub fn run_merge_cli(argmatch: &ArgMatches) -> Result<(), String> {
 }
 
 
-fn run_merge(path: PathBuf) -> tantivy::Result<()> {
+pub fn run_merge(path: PathBuf) -> tantivy::Result<()> {
+
+    let start = PreciseTime::now();
     let index = Index::open(&path)?;
     let segments = index.searchable_segment_ids()?;
-    let segment_meta = index
-        .writer(HEAP_SIZE)?
-        .merge(&segments)
-        .wait()
-        .map_err(|_| tantivy::Error::ErrorInThread(String::from("Merge got cancelled")));
-    println!("Merge finished with segment meta {:?}", segment_meta);
-    println!("Garbage collect irrelevant segments.");
-    Index::open(&path)?
-        .writer_with_num_threads(1, 40_000_000)?
-        .garbage_collect_files()?;
+    if segments.len() > 1 {
+        let segment_meta = index
+            .writer(HEAP_SIZE)?
+            .merge(&segments)
+            .wait()
+            .chain_err(|| ErrorKind::ErrorInThread(String::from("Merge got cancelled")) );
+        println!("Merge finished with segment meta {:?}", segment_meta);
+        println!("Garbage collect irrelevant segments.");
+        Index::open(&path)?
+            .writer_with_num_threads(1, 40_000_000)?
+            .garbage_collect_files()?;   
+    }
+    else {
+        println!("Merge not required");
+    }
+    
+    let end = PreciseTime::now();
+    let elapsed = start.to(end);
+    println!("Merging took {:?} seconds", (elapsed.num_microseconds().unwrap() as u64) / 1_000_000 );
+
+
     Ok(())
 }

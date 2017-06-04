@@ -30,7 +30,7 @@ byteorder = "0.5"
 log = "0.3"
 env_logger = "0.3"
 version = "2"
-tantivy = { path="../tantivy", branch="tantivy-imhotep"}
+tantivy = { path="../tantivy", branch="tantivy-imhotep", features=["streamdict"]}
 futures = "0.1"
 #tantivy = "0.3.1"
 
@@ -41,7 +41,7 @@ path = "src/main.rs"
 
 [profile.release]
 opt-level = 3
-debug = false
+#debug = true
 debug-assertions = false
 lto = true
 
