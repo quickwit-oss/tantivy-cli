@@ -13,28 +13,29 @@ use tantivy::Document;
 use time::PreciseTime;
 use clap::ArgMatches;
 use chan;
+use tantivy::merge_policy::NoMergePolicy;
 use std::thread;
 
 pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(argmatch.value_of("index").unwrap());
-    let document_source = {
-        match argmatch.value_of("file") {
-            Some(path) => {
-                DocumentSource::FromFile(PathBuf::from(path))
-            }
-            None => DocumentSource::FromPipe,
-        }
-    };
+    let document_source = argmatch.value_of("file")
+        .map(|path| DocumentSource::FromFile(PathBuf::from(path)))
+        .unwrap_or(DocumentSource::FromPipe);
+    let no_merge = argmatch.is_present("nomerge");
     let mut num_threads = try!(value_t!(argmatch, "num_threads", usize).map_err(|_|format!("Failed to read num_threads argument as an integer.")));
     if num_threads == 0 {
         num_threads = 1;
     }
     let buffer_size = try!(value_t!(argmatch, "memory_size", usize).map_err(|_|format!("Failed to read the buffer size argument as an integer.")));
     let buffer_size_per_thread = buffer_size / num_threads;
-    run_index(index_directory, document_source, buffer_size_per_thread, num_threads).map_err(|e| format!("Indexing failed : {:?}", e))
+    run_index(index_directory, document_source, buffer_size_per_thread, num_threads, no_merge).map_err(|e| format!("Indexing failed : {:?}", e))
 }
 
-fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_per_thread: usize, num_threads: usize) -> tantivy::Result<()> {
+fn run_index(directory: PathBuf,
+             document_source: DocumentSource,
+             buffer_size_per_thread: usize,
+             num_threads: usize,
+             no_merge: bool) -> tantivy::Result<()> {
     
     let index = try!(Index::open(&directory));
     let schema = index.schema();
@@ -48,7 +49,6 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_pe
             line_sender.send(article_line);
         }
     });
-    
 
     let num_threads_to_parse_json = cmp::max(1, num_threads / 2);
     info!("Using {} threads to parse json", num_threads_to_parse_json);
@@ -79,7 +79,10 @@ fn run_index(directory: PathBuf, document_source: DocumentSource, buffer_size_pe
             index.writer(buffer_size_per_thread)
         }
     );
-
+    
+    if no_merge {
+        index_writer.set_merge_policy(Box::new(NoMergePolicy));
+    }
 
     let index_result = index_documents(&mut index_writer, doc_receiver);
     match index_result {

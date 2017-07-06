@@ -86,6 +86,9 @@ fn main() {
                     .value_name("memory_size")
                     .help("Total memory_size in bytes. It will be split for the different threads.")
                     .default_value("1000000000"))
+                .arg(Arg::with_name("nomerge")
+                    .long("nomerge")
+                    .help("Do not merge segments"))
         )
         .subcommand(
             SubCommand::with_name("search")
@@ -125,12 +128,12 @@ fn main() {
     let (subcommand, some_options) = cli_options.subcommand();
     let options = some_options.unwrap();
     let run_cli = match subcommand {
-        "new" => run_new_cli,
+        // "new" => run_new_cli,
         "index" => run_index_cli,
-        "serve" => run_serve_cli,
-        "search" => run_search_cli,
-        "merge" => run_merge_cli,
-        "bench" => run_bench_cli,
+        // "serve" => run_serve_cli,
+        // "search" => run_search_cli,
+        // "merge" => run_merge_cli,
+        // "bench" => run_bench_cli,
         _ => panic!("Subcommand {} is unknown", subcommand)
     };
     run_cli(options).unwrap();

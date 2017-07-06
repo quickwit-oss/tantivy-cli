@@ -1,6 +1,6 @@
 extern crate tantivy;
 
-use tantivy::Index;
+use tantivy::{Index, SegmentMeta};
 use std::path::PathBuf;
 use clap::ArgMatches;
 use futures::Future;
@@ -24,11 +24,12 @@ pub fn run_merge_cli(argmatch: &ArgMatches) -> Result<(), String> {
 fn run_merge(path: PathBuf) -> tantivy::Result<()> {
     let index = Index::open(&path)?;
     let segments = index.searchable_segment_ids()?;
-    let segment_meta = index
+    let segment_meta: SegmentMeta = index
         .writer(HEAP_SIZE)?
         .merge(&segments)
         .wait()
-        .map_err(|_| tantivy::Error::ErrorInThread(String::from("Merge got cancelled")));
+        .expect("Merge failed");
+        //.map_err(|_| tantivy::Error::ErrorInThread(String::from("Merge got cancelled")));
     println!("Merge finished with segment meta {:?}", segment_meta);
     println!("Garbage collect irrelevant segments.");
     Index::open(&path)?
