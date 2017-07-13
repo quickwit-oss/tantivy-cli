@@ -50,7 +50,7 @@ fn run_index(directory: PathBuf,
         }
     });
 
-    let num_threads_to_parse_json = cmp::max(1, num_threads / 2);
+    let num_threads_to_parse_json = cmp::max(1, num_threads / 4);
     info!("Using {} threads to parse json", num_threads_to_parse_json);
     for _ in 0..num_threads_to_parse_json {
         let schema_clone = schema.clone();
@@ -84,13 +84,25 @@ fn run_index(directory: PathBuf,
         index_writer.set_merge_policy(Box::new(NoMergePolicy));
     }
 
+    let start_overall = PreciseTime::now();
     let index_result = index_documents(&mut index_writer, doc_receiver);
+    {
+        let duration = start_overall.to(PreciseTime::now());
+        info!("Indexing the documents took {} s", duration.num_seconds());
+    }
+
+
+
     match index_result {
         Ok(docstamp) => {
             println!("Commit succeed, docstamp at {}", docstamp);
             println!("Waiting for merging threads");
             index_writer.wait_merging_threads()?;
             println!("Terminated successfully!");
+            {
+                let duration = start_overall.to(PreciseTime::now());
+                info!("Indexing the documents took {} overall (indexing + merge)", duration.num_seconds());
+            }
             Ok(())
         }
         Err(e) => {
