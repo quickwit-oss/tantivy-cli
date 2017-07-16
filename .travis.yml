@@ -1,0 +1,72 @@
+# Based on the "trust" template v0.1.1
+# https://github.com/japaric/trust/tree/v0.1.1
+
+dist: trusty
+language: rust
+services: docker
+sudo: required
+
+# TODO Rust builds on stable by default, this can be
+# overridden on a case by case basis down below.
+
+env:
+  global:
+    # TODO Update this to match the name of your project.
+    - CRATE_NAME=tantivy-cli
+
+matrix:
+  # TODO These are all the build jobs. Adjust as necessary. Comment out what you
+  # don't need
+  include:
+    # Linux
+    - env: TARGET=x86_64-unknown-linux-musl
+      rust: nightly
+
+    # OSX
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+      rust: nightly
+
+before_install: set -e
+
+install:
+  - sh ci/install.sh
+  - source ~/.cargo/env || true
+
+script:
+  - bash ci/script.sh
+
+after_script: set +e
+
+before_deploy:
+  - sh ci/before_deploy.sh
+
+deploy:
+  api_key:
+    secure: "YIvQWnj9Nadcc9x4tzGSaEh9yW6t0YFFMvqJucc1RSFsT2thTe9BVwawntIbnnTyqWDpkYnxgMV83fPK1rSKwtNHCKVjuIukzQz1QCtK8GHV32AiVlopb5y5WgBsZIA2+1kgDnaJ/qXc3oOpyUfd7V9fPfdT3IR3fdkDR1Ywm2l6oSxqN/6cdIWAtU67nAvDfVbvJVi0gcmT+PkVaEPCVsyOuZ8iwy05oStN2RJv7d41T2mwPnbj8g4nlL2u18U6iFfsG01PIpQ0oa7GWDran9npr3zWbhPJwMAgdvoc30gh6z7y/1eRcv6Vggh/MF8nqmJ5dWCOMr5WIXMa81jTwwKsuarnG5EkFo9rJ/opzHQE0J/wwFBtwKtAREhezmq6xpPuUcTVzdnq+Fr234toBhvJNfABtNK9h9Nbbac0nHh4HnHB/OoE2zMrtJshmH1TcIHEvM2Sz0s3fG8d8REkI8B2wOoCEnmn6LC2YyFvLhCSZWYaC/LsRx2VThBwKIGztbuR3NDhwkUIVtrMapi+H3Ds5o7bKClXotXqLvK7OBkCw0ZceZ1ijqNw2axq1HZWqvguA0ZRLmTJ9enIOhX5Y4GoQDfc7DPEOPwjT4boEwQblwXx1UUvCAmFlqa8MSNCeRqHLOD7MNuOFWw1WPsyJdvZEQ62UvHWrqQ8l0J5qQY="
+  file_glob: true
+  file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
+  on:
+    # TODO Here you can pick which targets will generate binary releases
+    # In this example, there are some targets that are tested using the stable
+    # and nightly channels. This condition makes sure there is only one release
+    # for such targets and that's generated using the stable channel
+    # condition: $TRAVIS_RUST_VERSION = stable
+    tags: true
+  provider: releases
+  skip_cleanup: true
+
+cache: cargo
+before_cache:
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
+
+branches:
+  only:
+    # release tags
+    - /^v\d+\.\d+\.\d+.*$/
+    - master
+
+notifications:
+  email:
+    on_success: always
