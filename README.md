@@ -20,7 +20,7 @@ run `rustup run nightly cargo install tantivy-cli`. (`cargo install tantivy-cli`
 as well if nightly is your default toolchain).
 
 Alternatively, if you are on 64-bit Linux, you can directly download a
-static binary:  [binaries/linux_x86_64/](http://fulmicoton.com/tantivy-files/binaries/0.2.0/linux_x86_64/tantivy),
+static binary:  [binaries/linux_x86_64/](http://fulmicoton.com/tantivy-files/binaries/0.4.0/linux_x86_64/tantivy),
 and save it in a directory on your system's `PATH`.
 
 
