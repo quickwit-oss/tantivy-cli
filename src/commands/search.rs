@@ -12,9 +12,8 @@ use tantivy::schema::FieldType;
 pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
     let query = matches.value_of("query").unwrap();
-    loop {
-        run_search(&index_directory, &query).map_err(|e| format!("{:?}", e))
-    }
+    run_search(&index_directory, &query)
+        .map_err(|e| format!("{:?}", e))
 }
 
 fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {     
