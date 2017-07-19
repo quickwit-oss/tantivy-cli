@@ -20,7 +20,7 @@ run `rustup run nightly cargo install tantivy-cli`. (`cargo install tantivy-cli`
 as well if nightly is your default toolchain).
 
 Alternatively, you can directly download a
-static binary for [Linux x86 64](https://github.com/tantivy-search/tantivy-cli/releases/download/0.4.0/tantivy-cli-0.4.0-x86_64-unknown-linux-musl.tar.gz) or for [Mac OS X](https://github.com/tantivy-search/tantivy-cli/releases/download/0.4.0/tantivy-cli-0.4.0-x86_64-apple-darwin.tar.gz)
+static binary for [Linux x86 64](https://github.com/tantivy-search/tantivy-cli/releases/download/0.4.2/tantivy-cli-0.4.2-x86_64-unknown-linux-musl.tar.gz) or for [Mac OS X](https://github.com/tantivy-search/tantivy-cli/releases/download/0.4.2/tantivy-cli-0.4.2-x86_64-apple-darwin.tar.gz)
 and save it in a directory on your system's `PATH`.
 
 
