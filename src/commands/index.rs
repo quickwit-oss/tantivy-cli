@@ -101,7 +101,7 @@ fn run_index(directory: PathBuf,
             println!("Terminated successfully!");
             {
                 let duration = start_overall.to(PreciseTime::now());
-                info!("Indexing the documents took {} overall (indexing + merge)", duration.num_seconds());
+                info!("Indexing the documents took {} s overall (indexing + merge)", duration.num_seconds());
             }
             Ok(())
         }
