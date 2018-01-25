@@ -19,14 +19,6 @@ pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
 
 fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {     
     let index = Index::open(directory)?;
-    index
-        .tokenizers()
-        .register("commoncrawl", SimpleTokenizer
-            .filter(RemoveLongFilter::limit(40))
-            .filter(LowerCaser)
-            .filter(AlphaNumOnlyFilter)
-            .filter(Stemmer::new())
-        );
     let schema = index.schema();
     let default_fields: Vec<Field> = schema
         .fields()
