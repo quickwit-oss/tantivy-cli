@@ -22,11 +22,11 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
         .map(|path| DocumentSource::FromFile(PathBuf::from(path)))
         .unwrap_or(DocumentSource::FromPipe);
     let no_merge = argmatch.is_present("nomerge");
-    let mut num_threads = try!(value_t!(argmatch, "num_threads", usize).map_err(|_|format!("Failed to read num_threads argument as an integer.")));
+    let mut num_threads = value_t!(argmatch, "num_threads", usize).map_err(|_| format!("Failed to read num_threads argument as an integer."))?;
     if num_threads == 0 {
         num_threads = 1;
     }
-    let buffer_size = try!(value_t!(argmatch, "memory_size", usize).map_err(|_|format!("Failed to read the buffer size argument as an integer.")));
+    let buffer_size = value_t!(argmatch, "memory_size", usize).map_err(|_| format!("Failed to read the buffer size argument as an integer."))?;
     let buffer_size_per_thread = buffer_size / num_threads;
     run_index(index_directory, document_source, buffer_size_per_thread, num_threads, no_merge).map_err(|e| format!("Indexing failed : {:?}", e))
 }
@@ -37,7 +37,7 @@ fn run_index(directory: PathBuf,
              num_threads: usize,
              no_merge: bool) -> tantivy::Result<()> {
     
-    let index = try!(Index::open(&directory));
+    let index = Index::open(&directory)?;
     let schema = index.schema();
     let (line_sender, line_receiver) = chan::sync(10_000);
     let (doc_sender, doc_receiver) = chan::sync(10_000);
@@ -71,14 +71,11 @@ fn run_index(directory: PathBuf,
     }
     drop(doc_sender);
 
-    let mut index_writer = try!(
-        if num_threads > 0 {
-            index.writer_with_num_threads(num_threads, buffer_size_per_thread)
-        }
-        else {
-            index.writer(buffer_size_per_thread)
-        }
-    );
+    let mut index_writer = if num_threads > 0 {
+        index.writer_with_num_threads(num_threads, buffer_size_per_thread)
+    } else {
+        index.writer(buffer_size_per_thread)
+    }?;
     
     if no_merge {
         index_writer.set_merge_policy(Box::new(NoMergePolicy));
@@ -145,7 +142,7 @@ impl DocumentSource {
                 BufReader::new(Box::new(io::stdin()))
             }
             &DocumentSource::FromFile(ref filepath) => {
-                let read_file = try!(File::open(&filepath));
+                let read_file = File::open(&filepath)?;
                 BufReader::new(Box::new(read_file))
             }
         })

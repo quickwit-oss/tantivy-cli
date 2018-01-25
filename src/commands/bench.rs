@@ -17,7 +17,7 @@ use std::path::PathBuf;
 pub fn run_bench_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_path = PathBuf::from(matches.value_of("index").unwrap());
     let queries_path = PathBuf::from(matches.value_of("queries").unwrap()); // the unwrap is safe as long as it is comming from the main cli.
-    let num_repeat = try!(value_t!(matches, "num_repeat", usize).map_err(|e|format!("Failed to read num_repeat argument as an integer. {:?}", e)));
+    let num_repeat = value_t!(matches, "num_repeat", usize).map_err(|e| format!("Failed to read num_repeat argument as an integer. {:?}", e))?;
     run_bench(&index_path, &queries_path, num_repeat).map_err(From::from)
 }
 
@@ -34,13 +34,11 @@ fn extract_search_fields(schema: &Schema) -> Vec<Field> {
 }
 
 fn read_query_file(query_path: &Path) -> io::Result<Vec<String>> {
-    let query_file: File = try!(File::open(&query_path));
+    let query_file: File = File::open(&query_path)?;
     let file = BufReader::new(&query_file);
     let mut queries = Vec::new();
     for line_res in file.lines() {
-        let line = try!(line_res);
-        let query = String::from(line.trim());
-        queries.push(query);
+        queries.push(line_res?);
     }
     Ok(queries)
 }
@@ -54,11 +52,11 @@ fn run_bench(index_path: &Path,
     println!("Query : {:?}", index_path);
     println!("-------------------------------\n\n\n");
     
-    let index = try!(Index::open(index_path).map_err(|e| format!("Failed to open index.\n{:?}", e)));
+    let index = Index::open(index_path).map_err(|e| format!("Failed to open index.\n{:?}", e))?;
     let searcher = index.searcher();
     let default_search_fields: Vec<Field> = extract_search_fields(&index.schema());
-    let queries = try!(read_query_file(query_filepath).map_err(|e| format!("Failed reading the query file:  {}", e)));
-    let query_parser = QueryParser::new(index.schema(), default_search_fields);
+    let queries = read_query_file(query_filepath).map_err(|e| format!("Failed reading the query file:  {}", e))?;
+    let query_parser = QueryParser::new(index.schema(), default_search_fields, index.tokenizers().clone());
     
     println!("SEARCH\n");
     println!("{}\t{}\t{}\t{}", "query", "num_terms", "num hits", "time in microsecs");
@@ -71,7 +69,8 @@ fn run_bench(index_path: &Path,
             let timing;
             {
                 let mut collector = chain().push(&mut top_collector).push(&mut count_collector);
-                timing = try!(query.search(&searcher, &mut collector).map_err(|e| format!("Failed while searching query {:?}.\n\n{:?}", query_txt, e)));
+                timing = query.search(&searcher, &mut collector)
+                    .map_err(|e| format!("Failed while searching query {:?}.\n\n{:?}", query_txt, e))?;
             }
             println!("{}\t{}\t{}", query_txt, count_collector.count(), timing.total_time());
         }
@@ -84,7 +83,8 @@ fn run_bench(index_path: &Path,
         for query_txt in &queries {
             let query = query_parser.parse_query(&query_txt).unwrap();
             let mut top_collector = TopCollector::with_limit(10);
-            try!(query.search(&searcher, &mut top_collector).map_err(|e| format!("Failed while retrieving document for query {:?}.\n{:?}", query, e)));
+            query.search(&searcher, &mut top_collector)
+                .map_err(|e| format!("Failed while retrieving document for query {:?}.\n{:?}", query, e))?;
             let mut timer = TimerTree::default();
             {
                 let _scoped_timer_ = timer.open("total");
