@@ -8,7 +8,6 @@ use tantivy::query::QueryParser;
 use tantivy::schema::Field;
 use serde_json;
 use tantivy::schema::FieldType;
-use tantivy::tokenizer::*;
 
 pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
@@ -39,7 +38,7 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
     let query_parser = QueryParser::new(schema.clone(), default_fields, index.tokenizers().clone());
     let query = query_parser.parse_query(query)?;
     let searcher = index.searcher();
-    let weight = query.weight(&searcher)?;
+    let weight = query.weight(&searcher, false)?;
     let schema = index.schema();
     for segment_reader in searcher.segment_readers() {
         let mut scorer = weight.scorer(segment_reader)?;

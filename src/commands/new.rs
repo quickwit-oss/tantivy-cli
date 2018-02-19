@@ -2,6 +2,7 @@ use clap::ArgMatches;
 use std::convert::From;
 use std::path::PathBuf;
 use tantivy;
+use tantivy::schema::Cardinality;
 use tantivy::schema::*;
 use tantivy::Index;
 use std::io;
@@ -111,7 +112,7 @@ fn ask_add_field_u64(field_name: &str, schema_builder: &mut SchemaBuilder) {
         u64_options = u64_options.set_stored();
     }
     if prompt_yn("Should the field be fast") {
-        u64_options = u64_options.set_fast();
+        u64_options = u64_options.set_fast(Cardinality::SingleValue);
     }
     if prompt_yn("Should the field be indexed") {
         u64_options = u64_options.set_indexed();
