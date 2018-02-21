@@ -40,6 +40,8 @@ use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
 use tantivy::schema::Schema;
 use tantivy::TimerTree;
+use tantivy::tokenizer::*;
+use tantivy::DocAddress;
 use urlencoded::UrlEncodedQuery;
 
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
@@ -62,6 +64,7 @@ struct Serp {
 #[derive(Serialize)]
 struct Hit {
     doc: NamedFieldDocument,
+    id: u32,
 }
 
 struct IndexServer {
@@ -74,6 +77,13 @@ impl IndexServer {
     
     fn load(path: &Path) -> IndexServer {
         let index = Index::open(path).unwrap();
+        index.tokenizers()
+            .register("commoncrawl", SimpleTokenizer
+            .filter(RemoveLongFilter::limit(40))
+            .filter(LowerCaser)
+            .filter(AlphaNumOnlyFilter)
+            .filter(Stemmer::new())
+        );
         let schema = index.schema();
         let default_fields: Vec<Field> = schema
             .fields()
@@ -83,7 +93,7 @@ impl IndexServer {
                 |&(_, ref field_entry)| {
                     match *field_entry.field_type() {
                         FieldType::Str(ref text_field_options) => {
-                            text_field_options.get_indexing_options().is_indexed()
+                            text_field_options.get_indexing_options().is_some()
                         },
                         _ => false
                     }
@@ -91,17 +101,18 @@ impl IndexServer {
             )
             .map(|(i, _)| Field(i as u32))
             .collect();
-        let query_parser = QueryParser::new(schema.clone(), default_fields);
+        let query_parser = QueryParser::new(schema.clone(), default_fields, index.tokenizers().clone());
         IndexServer {
-            index: index,
-            query_parser: query_parser,
-            schema: schema,
+            index,
+            query_parser,
+            schema,
         }
     }
 
-    fn create_hit(&self, doc: &Document) -> Hit {
+    fn create_hit(&self, doc: &Document, doc_address: &DocAddress) -> Hit {
         Hit {
-            doc: self.schema.to_named_doc(&doc)
+            doc: self.schema.to_named_doc(&doc),
+            id: doc_address.doc(),
         }
     }
     
@@ -116,7 +127,7 @@ impl IndexServer {
             let mut chained_collector = collector::chain()
                 .push(&mut top_collector)
                 .push(&mut count_collector);
-            try!(query.search(&searcher, &mut chained_collector));
+            query.search(&searcher, &mut chained_collector)?;
         }
         let hits: Vec<Hit> = {
             let _fetching_timer = timer_tree.open("fetching docs");
@@ -124,14 +135,14 @@ impl IndexServer {
                 .iter()
                 .map(|doc_address| {
                     let doc: Document = searcher.doc(doc_address).unwrap();
-                    self.create_hit(&doc)
+                    self.create_hit(&doc, doc_address)
                 })
                 .collect()
         };
         Ok(Serp {
-            q: q,
+            q,
             num_hits: count_collector.count(),
-            hits: hits,
+            hits,
             timings: timer_tree,
         })
     }
@@ -163,9 +174,9 @@ fn search(req: &mut Request) -> IronResult<Response> {
                 .get("nhits")
                 .and_then(|nhits_str| usize::from_str(&nhits_str[0]).ok())
                 .unwrap_or(10);
-            let query = try!(qs_map
+            let query = qs_map
                 .get("q")
-                .ok_or_else(|| IronError::new(StringError(String::from("Parameter q is missing from the query")), status::BadRequest)))[0].clone();
+                .ok_or_else(|| IronError::new(StringError(String::from("Parameter q is missing from the query")), status::BadRequest))?[0].clone();
             let serp = index_server.search(query, num_hits).unwrap();
             let resp_json = serde_json::to_string_pretty(&serp).unwrap();
             let content_type = "application/json".parse::<Mime>().unwrap();
