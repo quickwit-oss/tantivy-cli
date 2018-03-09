@@ -22,6 +22,8 @@ extern crate byteorder;
 #[macro_use]
 extern crate serde_derive;
 
+use std::io::Write;
+
 use clap::{AppSettings, Arg, App, SubCommand};
 mod commands;
 use self::commands::*;
@@ -138,10 +140,9 @@ fn main() {
     };
 
     if let Err(ref e) = run_cli(options) {
-        use std::io::Write;
-        let stderr = &mut ::std::io::stderr();
+        let stderr = &mut std::io::stderr();
         let errmsg = "Error writing ot stderr";
         writeln!(stderr, "{}", e).expect(errmsg);
-        ::std::process::exit(1);
+        std::process::exit(1);
     }
 }
