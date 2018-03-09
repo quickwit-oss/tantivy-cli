@@ -22,6 +22,7 @@ extern crate byteorder;
 #[macro_use]
 extern crate serde_derive;
 
+use std::io::Write;
 
 use clap::{AppSettings, Arg, App, SubCommand};
 mod commands;
@@ -137,5 +138,11 @@ fn main() {
         "bench" => run_bench_cli,
         _ => panic!("Subcommand {} is unknown", subcommand)
     };
-    run_cli(options).unwrap();
+
+    if let Err(ref e) = run_cli(options) {
+        let stderr = &mut std::io::stderr();
+        let errmsg = "Error writing ot stderr";
+        writeln!(stderr, "{}", e).expect(errmsg);
+        std::process::exit(1);
+    }
 }
