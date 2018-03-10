@@ -24,14 +24,13 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
         .iter()
         .enumerate()
         .filter(
-            |&(_, ref field_entry)      | {
+            |&(_, ref field_entry)|
                 match *field_entry.field_type() {
                     FieldType::Str(ref text_field_options) => {
                         text_field_options.get_indexing_options().is_some()
                     },
                     _ => false
                 }
-            }
         )
         .map(|(i, _)| Field(i as u32))
         .collect();
