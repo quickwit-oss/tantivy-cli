@@ -217,11 +217,11 @@ the following [url](http://localhost:3000/api/?q=barack+obama&nhits=20) in your 
 By default this query is treated as `barack OR obama`.
 You can also search for documents that contains both term, by adding a `+` sign before the terms in your query.
 
-    http://localhost:3000/api/?q=%2Bbarack%20%2Bobama%0A&nhits=20
+    http://localhost:3000/api/?q=%2Bbarack%20%2Bobama&nhits=20
     
 Also, `-` makes it possible to remove documents the documents containing a specific term.
 
-    http://localhost:3000/api/?q=-barack%20%2Bobama%0A&nhits=20
+    http://localhost:3000/api/?q=-barack%20%2Bobama&nhits=20
     
 Finally tantivy handle phrase queries.
 
