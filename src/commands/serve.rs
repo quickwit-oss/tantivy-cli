@@ -39,7 +39,6 @@ use tantivy::schema::Field;
 use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
 use tantivy::schema::Schema;
-use tantivy::TimerTree;
 use tantivy::tokenizer::*;
 use tantivy::DocAddress;
 use urlencoded::UrlEncodedQuery;
@@ -58,7 +57,6 @@ struct Serp {
     q: String,
     num_hits: usize,
     hits: Vec<Hit>,
-    timings: TimerTree,
 }
 
 #[derive(Serialize)]
@@ -76,7 +74,7 @@ struct IndexServer {
 impl IndexServer {
     
     fn load(path: &Path) -> IndexServer {
-        let index = Index::open(path).unwrap();
+        let index = Index::open_in_dir(path).unwrap();
         index.tokenizers()
             .register("commoncrawl", SimpleTokenizer
             .filter(RemoveLongFilter::limit(40))
@@ -121,16 +119,13 @@ impl IndexServer {
         let searcher = self.index.searcher();
         let mut count_collector = CountCollector::default();
         let mut top_collector = TopCollector::with_limit(num_hits);
-        let mut timer_tree = TimerTree::default();
         {
-            let _search_timer = timer_tree.open("search");
             let mut chained_collector = collector::chain()
                 .push(&mut top_collector)
                 .push(&mut count_collector);
             query.search(&searcher, &mut chained_collector)?;
         }
         let hits: Vec<Hit> = {
-            let _fetching_timer = timer_tree.open("fetching docs");
             top_collector.docs()
                 .iter()
                 .map(|doc_address| {
@@ -143,7 +138,6 @@ impl IndexServer {
             q,
             num_hits: count_collector.count(),
             hits,
-            timings: timer_tree,
         })
     }
 }

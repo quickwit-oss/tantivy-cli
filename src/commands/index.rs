@@ -37,7 +37,7 @@ fn run_index(directory: PathBuf,
              num_threads: usize,
              no_merge: bool) -> tantivy::Result<()> {
     
-    let index = Index::open(&directory)?;
+    let index = Index::open_in_dir(&directory)?;
     let schema = index.schema();
     let (line_sender, line_receiver) = chan::sync(10_000);
     let (doc_sender, doc_receiver) = chan::sync(10_000);
