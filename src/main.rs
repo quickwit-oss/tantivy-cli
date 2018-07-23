@@ -23,6 +23,7 @@ extern crate serde_derive;
 
 use clap::{AppSettings, Arg, App, SubCommand};
 mod commands;
+pub mod timer;
 use self::commands::*;
 
 

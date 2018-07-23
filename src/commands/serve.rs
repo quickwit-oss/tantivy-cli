@@ -39,9 +39,9 @@ use tantivy::schema::Field;
 use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
 use tantivy::schema::Schema;
-use tantivy::TimerTree;
 use tantivy::tokenizer::*;
 use tantivy::DocAddress;
+use timer::TimerTree;
 use urlencoded::UrlEncodedQuery;
 
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
@@ -76,7 +76,7 @@ struct IndexServer {
 impl IndexServer {
     
     fn load(path: &Path) -> IndexServer {
-        let index = Index::open(path).unwrap();
+        let index = Index::open_in_dir(path).unwrap();
         index.tokenizers()
             .register("commoncrawl", SimpleTokenizer
             .filter(RemoveLongFilter::limit(40))

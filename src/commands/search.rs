@@ -17,7 +17,7 @@ pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
 }
 
 fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {     
-    let index = Index::open(directory)?;
+    let index = Index::open_in_dir(directory)?;
     let schema = index.schema();
     let default_fields: Vec<Field> = schema
         .fields()
