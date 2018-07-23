@@ -62,7 +62,6 @@ fn run_bench(index_path: &Path,
     for _ in 0..num_repeat {
         for query_txt in &queries {
             let query = query_parser.parse_query(&query_txt).unwrap();
-            // let num_terms = query.num_terms();
             let mut top_collector = TopCollector::with_limit(10);
             let mut count_collector = CountCollector::default();
             {
@@ -82,16 +81,6 @@ fn run_bench(index_path: &Path,
             let mut top_collector = TopCollector::with_limit(10);
             query.search(&searcher, &mut top_collector)
                 .map_err(|e| format!("Failed while retrieving document for query {:?}.\n{:?}", query, e))?;
-            /*
-            let mut timer = TimerTree::default();
-            {
-                let _scoped_timer_ = timer.open("total");
-                for doc_address in top_collector.docs() {
-                    searcher.doc(&doc_address).unwrap();
-                }
-            }
-            println!("{}\t{}", query_txt, timer.total_time());
-            */
         }
     }
     
