@@ -18,11 +18,6 @@ There are a couple ways to install `tantivy-cli`.
 If you are a Rust programmer, you probably have `cargo` installed and you can just
 run `cargo install tantivy-cli`
 
-Alternatively, you can directly download a
-static binary for [Linux x86 64](https://github.com/tantivy-search/tantivy-cli/releases/download/0.4.2/tantivy-cli-0.4.2-x86_64-unknown-linux-musl.tar.gz) or for [Mac OS X](https://github.com/tantivy-search/tantivy-cli/releases/download/0.4.2/tantivy-cli-0.4.2-x86_64-apple-darwin.tar.gz)
-and save it in a directory on your system's `PATH`.
-
-
 
 
 ## Creating the index:  `new`
