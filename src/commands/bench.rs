@@ -11,6 +11,7 @@ use tantivy::collector::TopCollector;
 use tantivy::collector::CountCollector;
 use clap::ArgMatches;
 use std::path::PathBuf;
+use timer::TimerTree;
 
 
 pub fn run_bench_cli(matches: &ArgMatches) -> Result<(), String> {
@@ -62,13 +63,17 @@ fn run_bench(index_path: &Path,
     for _ in 0..num_repeat {
         for query_txt in &queries {
             let query = query_parser.parse_query(&query_txt).unwrap();
+            // let num_terms = query.num_terms();
             let mut top_collector = TopCollector::with_limit(10);
             let mut count_collector = CountCollector::default();
+            let mut timing = TimerTree::default();
             {
+                let _search = timing.open("search");
                 let mut collector = chain().push(&mut top_collector).push(&mut count_collector);
                 query.search(&searcher, &mut collector)
                     .map_err(|e| format!("Failed while searching query {:?}.\n\n{:?}", query_txt, e))?;
             }
+            println!("{}\t{}\t{}", query_txt, count_collector.count(), timing.total_time());
         }
     }
     
@@ -81,6 +86,14 @@ fn run_bench(index_path: &Path,
             let mut top_collector = TopCollector::with_limit(10);
             query.search(&searcher, &mut top_collector)
                 .map_err(|e| format!("Failed while retrieving document for query {:?}.\n{:?}", query, e))?;
+            let mut timer = TimerTree::default();
+            {
+                let _scoped_timer_ = timer.open("total");
+                for doc_address in top_collector.docs() {
+                    searcher.doc(&doc_address).unwrap();
+                }
+            }
+            println!("{}\t{}", query_txt, timer.total_time());
         }
     }
     
