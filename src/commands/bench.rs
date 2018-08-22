@@ -2,7 +2,6 @@ use tantivy::Index;
 use tantivy::schema::{Field, Schema};
 use tantivy::query::QueryParser;
 use std::path::Path;
-use tantivy::TimerTree;
 use std::io::BufReader;
 use std::io::BufRead;
 use std::io;
@@ -12,6 +11,7 @@ use tantivy::collector::TopCollector;
 use tantivy::collector::CountCollector;
 use clap::ArgMatches;
 use std::path::PathBuf;
+use timer::TimerTree;
 
 
 pub fn run_bench_cli(matches: &ArgMatches) -> Result<(), String> {
@@ -52,7 +52,7 @@ fn run_bench(index_path: &Path,
     println!("Query : {:?}", index_path);
     println!("-------------------------------\n\n\n");
     
-    let index = Index::open(index_path).map_err(|e| format!("Failed to open index.\n{:?}", e))?;
+    let index = Index::open_in_dir(index_path).map_err(|e| format!("Failed to open index.\n{:?}", e))?;
     let searcher = index.searcher();
     let default_search_fields: Vec<Field> = extract_search_fields(&index.schema());
     let queries = read_query_file(query_filepath).map_err(|e| format!("Failed reading the query file:  {}", e))?;
@@ -66,10 +66,11 @@ fn run_bench(index_path: &Path,
             // let num_terms = query.num_terms();
             let mut top_collector = TopCollector::with_limit(10);
             let mut count_collector = CountCollector::default();
-            let timing;
+            let mut timing = TimerTree::default();
             {
+                let _search = timing.open("search");
                 let mut collector = chain().push(&mut top_collector).push(&mut count_collector);
-                timing = query.search(&searcher, &mut collector)
+                query.search(&searcher, &mut collector)
                     .map_err(|e| format!("Failed while searching query {:?}.\n\n{:?}", query_txt, e))?;
             }
             println!("{}\t{}\t{}", query_txt, count_collector.count(), timing.total_time());

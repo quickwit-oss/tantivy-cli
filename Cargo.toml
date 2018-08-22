@@ -1,6 +1,6 @@
 [package]
 name = "tantivy-cli"
-version = "0.5.0"
+version = "0.6.1"
 authors = ["Paul Masurel <paul.masurel@gmail.com>"]
 
 description = """Command line interface for Tantivy, a search engine library."""
@@ -30,8 +30,7 @@ byteorder = "0.5"
 log = "0.3"
 futures = "0.1"
 env_logger = "0.3"
-version = "2"
-tantivy = "0.5.0" 
+tantivy = "0.6.1"
 
 [[bin]]
 name = "tantivy"
@@ -43,8 +42,3 @@ opt-level = 3
 debug = false
 debug-assertions = false
 lto = true
-
-
-[features]
-default = ["tantivy/simdcompression"]
-

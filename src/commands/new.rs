@@ -24,7 +24,7 @@ fn prompt_input<P: Fn(&str) -> Result<(), String>>(prompt_text: &str, predicate:
         io::stdout().flush().unwrap();
         let mut buffer = String::new();
         io::stdin().read_line(&mut buffer).ok().expect("Failed to read line");
-        let answer = buffer.trim_right_matches("\n").to_string();
+        let answer = buffer.trim_right().to_string();
         match predicate(&answer) {
             Ok(()) => {
                 return answer;
@@ -145,7 +145,7 @@ fn run_new(directory: PathBuf) -> tantivy::Result<()> {
     let schema = schema_builder.build();
     let schema_json = format!("{}", serde_json::to_string_pretty(&schema).unwrap());
     println!("\n{}\n", Style::new().fg(Green).paint(schema_json));
-    Index::create(&directory, schema)?;
+    Index::create_in_dir(&directory, schema)?;
     Ok(())
 }
 

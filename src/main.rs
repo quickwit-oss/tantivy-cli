@@ -1,7 +1,5 @@
 #[macro_use]
 extern crate clap;
-#[macro_use]
-extern crate version;
 extern crate serde_json;
 #[macro_use]
 extern crate log;
@@ -26,6 +24,7 @@ use std::io::Write;
 
 use clap::{AppSettings, Arg, App, SubCommand};
 mod commands;
+pub mod timer;
 use self::commands::*;
 
 
@@ -42,7 +41,7 @@ fn main() {
 
     let cli_options = App::new("Tantivy")
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .version(version!())
+        .version(env!("CARGO_PKG_VERSION"))
         .author("Paul Masurel <paul.masurel@gmail.com>")
         .about("Tantivy Search Engine's command line interface.")
         .subcommand(
