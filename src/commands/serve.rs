@@ -134,7 +134,7 @@ impl IndexServer {
             top_collector.docs()
                 .iter()
                 .map(|doc_address| {
-                    let doc: Document = searcher.doc(doc_address).unwrap();
+                    let doc: Document = searcher.doc(*doc_address).unwrap();
                     self.create_hit(&doc, doc_address)
                 })
                 .collect()

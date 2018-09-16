@@ -90,7 +90,7 @@ fn run_bench(index_path: &Path,
             {
                 let _scoped_timer_ = timer.open("total");
                 for doc_address in top_collector.docs() {
-                    searcher.doc(&doc_address).unwrap();
+                    searcher.doc(doc_address).unwrap();
                 }
             }
             println!("{}\t{}", query_txt, timer.total_time());
