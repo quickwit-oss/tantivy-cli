@@ -6,6 +6,7 @@ use tantivy::schema::Cardinality;
 use tantivy::schema::*;
 use tantivy::Index;
 use std::io;
+use std::fs;
 use ansi_term::Style;
 use ansi_term::Colour::{Red, Blue, Green};
 use std::io::Write;
@@ -145,6 +146,12 @@ fn run_new(directory: PathBuf) -> tantivy::Result<()> {
     let schema = schema_builder.build();
     let schema_json = format!("{}", serde_json::to_string_pretty(&schema).unwrap());
     println!("\n{}\n", Style::new().fg(Green).paint(schema_json));
+    match fs::create_dir(&directory) {
+        Ok(_) => (),
+        // Proceed here; actual existence of index is checked in Index::create_in_dir
+        Err(ref e) if e.kind() == io::ErrorKind::AlreadyExists => (),
+        Err(e) => panic!("{:?}", e),
+    };
     Index::create_in_dir(&directory, schema)?;
     Ok(())
 }
