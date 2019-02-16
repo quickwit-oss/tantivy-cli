@@ -16,7 +16,7 @@ pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
         .map_err(|e| format!("{:?}", e))
 }
 
-fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {     
+fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
     let index = Index::open_in_dir(directory)?;
     let schema = index.schema();
     let default_fields: Vec<Field> = schema
@@ -43,7 +43,7 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
         let mut scorer = weight.scorer(segment_reader)?;
         while scorer.advance() {
             let doc_id = scorer.doc();
-            let doc = segment_reader.doc(doc_id)?;
+            let doc = segment_reader.get_store_reader().get(doc_id)?;
             let named_doc = schema.to_named_doc(&doc);
             println!("{}", serde_json::to_string(&named_doc).unwrap());
         }

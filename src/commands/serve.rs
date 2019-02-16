@@ -29,9 +29,9 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
 use tantivy;
-use tantivy::collector;
-use tantivy::collector::CountCollector;
-use tantivy::collector::TopCollector;
+use tantivy::Score;
+use tantivy::collector::Count;
+use tantivy::collector::TopDocs;
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::query::QueryParser;
@@ -119,21 +119,17 @@ impl IndexServer {
     fn search(&self, q: String, num_hits: usize) -> tantivy::Result<Serp> {
         let query = self.query_parser.parse_query(&q).expect("Parsing the query failed");
         let searcher = self.index.searcher();
-        let mut count_collector = CountCollector::default();
-        let mut top_collector = TopCollector::with_limit(num_hits);
         let mut timer_tree = TimerTree::default();
-        {
-            let _search_timer = timer_tree.open("search");
-            let mut chained_collector = collector::chain()
-                .push(&mut top_collector)
-                .push(&mut count_collector);
-            query.search(&searcher, &mut chained_collector)?;
-        }
+        let (doc_count, top_docs): (usize, Vec<(Score, DocAddress)>) = {
+            let mut _search_timer = timer_tree.open("search");
+            searcher.search(&query, &(Count, TopDocs::with_limit(num_hits)))?
+        };
+
         let hits: Vec<Hit> = {
             let _fetching_timer = timer_tree.open("fetching docs");
-            top_collector.docs()
+            top_docs
                 .iter()
-                .map(|doc_address| {
+                .map(|(_score, doc_address)| {
                     let doc: Document = searcher.doc(*doc_address).unwrap();
                     self.create_hit(&doc, doc_address)
                 })
@@ -141,7 +137,7 @@ impl IndexServer {
         };
         Ok(Serp {
             q,
-            num_hits: count_collector.count(),
+            num_hits: doc_count,
             hits,
             timings: timer_tree,
         })
