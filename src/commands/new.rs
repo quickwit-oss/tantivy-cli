@@ -25,7 +25,7 @@ fn prompt_input<P: Fn(&str) -> Result<(), String>>(prompt_text: &str, predicate:
         io::stdout().flush().unwrap();
         let mut buffer = String::new();
         io::stdin().read_line(&mut buffer).ok().expect("Failed to read line");
-        let answer = buffer.trim_right().to_string();
+        let answer = buffer.trim_end().to_string();
         match predicate(&answer) {
             Ok(()) => {
                 return answer;
