@@ -41,9 +41,10 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
     let schema = index.schema();
     for segment_reader in searcher.segment_readers() {
         let mut scorer = weight.scorer(segment_reader)?;
+        let store_reader = segment_reader.get_store_reader();
         while scorer.advance() {
             let doc_id = scorer.doc();
-            let doc = segment_reader.get_store_reader().get(doc_id)?;
+            let doc = store_reader.get(doc_id)?;
             let named_doc = schema.to_named_doc(&doc);
             println!("{}", serde_json::to_string(&named_doc).unwrap());
         }
