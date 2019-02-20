@@ -121,7 +121,7 @@ impl IndexServer {
         let searcher = self.index.searcher();
         let mut timer_tree = TimerTree::default();
         let (doc_count, top_docs): (usize, Vec<(Score, DocAddress)>) = {
-            let mut _search_timer = timer_tree.open("search");
+            let _search_timer = timer_tree.open("search");
             searcher.search(&query, &(Count, TopDocs::with_limit(num_hits)))?
         };
 
