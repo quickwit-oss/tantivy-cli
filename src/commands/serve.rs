@@ -34,7 +34,7 @@ use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
 use tantivy::schema::Schema;
 use tantivy::tokenizer::*;
-use tantivy::DocAddress;
+use tantivy::{DocAddress, Score};
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexReader;
@@ -59,6 +59,7 @@ struct Serp {
 
 #[derive(Serialize)]
 struct Hit {
+    score: Score,
     doc: NamedFieldDocument,
     id: u32,
 }
@@ -103,8 +104,9 @@ impl IndexServer {
         }
     }
 
-    fn create_hit(&self, doc: &Document, doc_address: &DocAddress) -> Hit {
+    fn create_hit(&self, score: Score, doc: &Document, doc_address: &DocAddress) -> Hit {
         Hit {
+            score,
             doc: self.schema.to_named_doc(&doc),
             id: doc_address.doc(),
         }
@@ -125,9 +127,9 @@ impl IndexServer {
             let _fetching_timer = timer_tree.open("fetching docs");
             top_docs
                 .iter()
-                .map(|(_score, doc_address)| {
+                .map(|(score, doc_address)| {
                     let doc: Document = searcher.doc(*doc_address).unwrap();
-                    self.create_hit(&doc, doc_address)
+                    self.create_hit(*score, &doc, doc_address)
                 })
                 .collect()
         };
