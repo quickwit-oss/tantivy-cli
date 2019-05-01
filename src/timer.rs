@@ -26,7 +26,8 @@ impl<'a> Drop for OpenTimer<'a> {
     fn drop(&mut self) {
         self.timer_tree.timings.push(Timing {
             name: self.name,
-            duration: self.start
+            duration: self
+                .start
                 .to(PreciseTime::now())
                 .num_microseconds()
                 .unwrap(),

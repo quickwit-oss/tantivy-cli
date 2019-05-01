@@ -3,41 +3,39 @@ extern crate clap;
 extern crate serde_json;
 #[macro_use]
 extern crate log;
-extern crate env_logger;
-extern crate tantivy;
-extern crate time;
-extern crate persistent;
-extern crate futures;
-extern crate urlencoded;
-extern crate iron;
-extern crate chan;
-extern crate staticfile;
 extern crate ansi_term;
-extern crate mount;
 extern crate bincode;
 extern crate byteorder;
+extern crate chan;
+extern crate env_logger;
+extern crate futures;
+extern crate iron;
+extern crate mount;
+extern crate persistent;
+extern crate staticfile;
+extern crate tantivy;
+extern crate time;
+extern crate urlencoded;
 
 #[macro_use]
 extern crate serde_derive;
 
 use std::io::Write;
 
-use clap::{AppSettings, Arg, App, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand};
 mod commands;
 pub mod timer;
 use self::commands::*;
 
-
 fn main() {
-    
     env_logger::init().unwrap();
-    
+
     let index_arg = Arg::with_name("index")
-                    .short("i")
-                    .long("index")
-                    .value_name("directory")
-                    .help("Tantivy index directory filepath")
-                    .required(true);
+        .short("i")
+        .long("index")
+        .value_name("directory")
+        .help("Tantivy index directory filepath")
+        .required(true);
 
     let cli_options = App::new("Tantivy")
         .setting(AppSettings::SubcommandRequiredElseHelp)
@@ -135,7 +133,7 @@ fn main() {
         "search" => run_search_cli,
         "merge" => run_merge_cli,
         "bench" => run_bench_cli,
-        _ => panic!("Subcommand {} is unknown", subcommand)
+        _ => panic!("Subcommand {} is unknown", subcommand),
     };
 
     if let Err(ref e) = run_cli(options) {

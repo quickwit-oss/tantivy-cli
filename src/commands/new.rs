@@ -1,30 +1,35 @@
+use ansi_term::Colour::{Blue, Green, Red};
+use ansi_term::Style;
 use clap::ArgMatches;
+use serde_json;
 use std::convert::From;
+use std::io;
+use std::io::Write;
 use std::path::PathBuf;
 use tantivy;
 use tantivy::schema::Cardinality;
 use tantivy::schema::*;
 use tantivy::Index;
-use std::io;
-use ansi_term::Style;
-use ansi_term::Colour::{Red, Blue, Green};
-use std::io::Write;
-use serde_json;
-
 
 pub fn run_new_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
-    run_new(index_directory).map_err(|e| format!("{:?}" , e))
+    run_new(index_directory).map_err(|e| format!("{:?}", e))
 }
-
 
 fn prompt_input<P: Fn(&str) -> Result<(), String>>(prompt_text: &str, predicate: P) -> String {
     loop {
-        print!("{prompt_text:<width$} ? ", prompt_text=Style::new().bold().fg(Blue).paint(prompt_text), width=40);
+        print!(
+            "{prompt_text:<width$} ? ",
+            prompt_text = Style::new().bold().fg(Blue).paint(prompt_text),
+            width = 40
+        );
         io::stdout().flush().unwrap();
         let mut buffer = String::new();
-        io::stdin().read_line(&mut buffer).ok().expect("Failed to read line");
-        let answer = buffer.trim_right().to_string();
+        io::stdin()
+            .read_line(&mut buffer)
+            .ok()
+            .expect("Failed to read line");
+        let answer = buffer.trim_end().to_string();
         match predicate(&answer) {
             Ok(()) => {
                 return answer;
@@ -36,30 +41,28 @@ fn prompt_input<P: Fn(&str) -> Result<(), String>>(prompt_text: &str, predicate:
     }
 }
 
-
 fn field_name_validate(field_name: &str) -> Result<(), String> {
     if is_valid_field_name(field_name) {
         Ok(())
-    }
-    else {
-        Err(String::from("Field name must match the pattern [_a-zA-Z0-9]+"))
+    } else {
+        Err(String::from(
+            "Field name must match the pattern [_a-zA-Z0-9]+",
+        ))
     }
 }
-    
-    
+
 fn prompt_options(msg: &str, codes: Vec<char>) -> char {
     let options_string: Vec<String> = codes.iter().map(|c| format!("{}", c)).collect();
     let options = options_string.join("/");
     let predicate = |entry: &str| {
         if entry.len() != 1 {
-            return Err(format!("Invalid input. Options are ({})", options))
+            return Err(format!("Invalid input. Options are ({})", options));
         }
         let c = entry.chars().next().unwrap().to_ascii_uppercase();
         if codes.contains(&c) {
-            return Ok(())
-        }
-        else {
-            return Err(format!("Invalid input. Options are ({})", options))
+            return Ok(());
+        } else {
+            return Err(format!("Invalid input. Options are ({})", options));
         }
     };
     let message = format!("{} ({})", msg, options);
@@ -68,9 +71,8 @@ fn prompt_options(msg: &str, codes: Vec<char>) -> char {
 }
 
 fn prompt_yn(msg: &str) -> bool {
-    prompt_options(msg, vec!('Y', 'N')) == 'Y' 
+    prompt_options(msg, vec!['Y', 'N']) == 'Y'
 }
-
 
 fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
     let mut text_options = TextOptions::default();
@@ -78,20 +80,19 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
         text_options = text_options.set_stored();
     }
 
-
-
     if prompt_yn("Should the field be indexed") {
-        let mut text_indexing_options = TextFieldIndexing
-            ::default()
+        let mut text_indexing_options = TextFieldIndexing::default()
             .set_index_option(IndexRecordOption::Basic)
             .set_tokenizer("en_stem");
 
         if prompt_yn("Should the term be tokenized?") {
             if prompt_yn("Should the term frequencies (per doc) be in the index") {
                 if prompt_yn("Should the term positions (per doc) be in the index") {
-                    text_indexing_options = text_indexing_options.set_index_option(IndexRecordOption::WithFreqsAndPositions);
+                    text_indexing_options = text_indexing_options
+                        .set_index_option(IndexRecordOption::WithFreqsAndPositions);
                 } else {
-                    text_indexing_options = text_indexing_options.set_index_option(IndexRecordOption::WithFreqs);
+                    text_indexing_options =
+                        text_indexing_options.set_index_option(IndexRecordOption::WithFreqs);
                 }
             }
         } else {
@@ -101,10 +102,8 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
         text_options = text_options.set_indexing_options(text_indexing_options);
     }
 
-
     schema_builder.add_text_field(field_name, text_options);
 }
-
 
 fn ask_add_field_u64(field_name: &str, schema_builder: &mut SchemaBuilder) {
     let mut u64_options = IntOptions::default();
@@ -123,20 +122,28 @@ fn ask_add_field_u64(field_name: &str, schema_builder: &mut SchemaBuilder) {
 fn ask_add_field(schema_builder: &mut SchemaBuilder) {
     println!("\n\n");
     let field_name = prompt_input("New field name ", field_name_validate);
-    let text_or_integer = prompt_options("Text or unsigned 32-bit integer", vec!('T', 'I'));
-    if text_or_integer =='T' {
+    let text_or_integer = prompt_options("Text or unsigned 32-bit integer", vec!['T', 'I']);
+    if text_or_integer == 'T' {
         ask_add_field_text(&field_name, schema_builder);
-    }
-    else {
-        ask_add_field_u64(&field_name, schema_builder);        
+    } else {
+        ask_add_field_u64(&field_name, schema_builder);
     }
 }
 
 fn run_new(directory: PathBuf) -> tantivy::Result<()> {
-    println!("\n{} ", Style::new().bold().fg(Green).paint("Creating new index"));
-    println!("{} ", Style::new().bold().fg(Green).paint("Let's define it's schema!"));
+    println!(
+        "\n{} ",
+        Style::new().bold().fg(Green).paint("Creating new index")
+    );
+    println!(
+        "{} ",
+        Style::new()
+            .bold()
+            .fg(Green)
+            .paint("Let's define it's schema!")
+    );
     let mut schema_builder = SchemaBuilder::default();
-    loop  {
+    loop {
         ask_add_field(&mut schema_builder);
         if !prompt_yn("Add another field") {
             break;
@@ -148,4 +155,3 @@ fn run_new(directory: PathBuf) -> tantivy::Result<()> {
     Index::create_in_dir(&directory, schema)?;
     Ok(())
 }
-

@@ -1,8 +1,8 @@
 /// This tantivy command starts a http server (by default on port 3000)
-/// 
+///
 /// Currently the only entrypoint is /api/
 /// and it takes the following query string argument
-/// 
+///
 /// - `q=` :    your query
 ///  - `nhits`:  the number of hits that should be returned. (default to 10)   
 ///
@@ -12,16 +12,14 @@
 ///
 ///     http://localhost:3000/api/?q=fulmicoton&&nhits=20
 ///
-
-
 use clap::ArgMatches;
 use iron::mime::Mime;
 use iron::prelude::*;
 use iron::status;
-use serde_json;
 use iron::typemap::Key;
 use mount::Mount;
 use persistent::Read;
+use serde_json;
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Debug};
@@ -29,11 +27,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
 use tantivy;
-use tantivy::collector;
-use tantivy::collector::CountCollector;
-use tantivy::collector::TopCollector;
-use tantivy::Document;
-use tantivy::Index;
+use tantivy::collector::{Count, TopDocs};
 use tantivy::query::QueryParser;
 use tantivy::schema::Field;
 use tantivy::schema::FieldType;
@@ -41,6 +35,9 @@ use tantivy::schema::NamedFieldDocument;
 use tantivy::schema::Schema;
 use tantivy::tokenizer::*;
 use tantivy::DocAddress;
+use tantivy::Document;
+use tantivy::Index;
+use tantivy::IndexReader;
 use timer::TimerTree;
 use urlencoded::UrlEncodedQuery;
 
@@ -51,7 +48,6 @@ pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
     let host = format!("{}:{}", host_str, port);
     run_serve(index_directory, &host).map_err(|e| format!("{:?}", e))
 }
-
 
 #[derive(Serialize)]
 struct Serp {
@@ -68,42 +64,40 @@ struct Hit {
 }
 
 struct IndexServer {
-    index: Index,
+    reader: IndexReader,
     query_parser: QueryParser,
     schema: Schema,
 }
 
 impl IndexServer {
-    
     fn load(path: &Path) -> IndexServer {
         let index = Index::open_in_dir(path).unwrap();
-        index.tokenizers()
-            .register("commoncrawl", SimpleTokenizer
-            .filter(RemoveLongFilter::limit(40))
-            .filter(LowerCaser)
-            .filter(AlphaNumOnlyFilter)
-            .filter(Stemmer::new())
+        index.tokenizers().register(
+            "commoncrawl",
+            SimpleTokenizer
+                .filter(RemoveLongFilter::limit(40))
+                .filter(LowerCaser)
+                .filter(AlphaNumOnlyFilter)
+                .filter(Stemmer::new(Language::English)),
         );
         let schema = index.schema();
         let default_fields: Vec<Field> = schema
             .fields()
             .iter()
             .enumerate()
-            .filter(
-                |&(_, ref field_entry)| {
-                    match *field_entry.field_type() {
-                        FieldType::Str(ref text_field_options) => {
-                            text_field_options.get_indexing_options().is_some()
-                        },
-                        _ => false
-                    }
+            .filter(|&(_, ref field_entry)| match *field_entry.field_type() {
+                FieldType::Str(ref text_field_options) => {
+                    text_field_options.get_indexing_options().is_some()
                 }
-            )
+                _ => false,
+            })
             .map(|(i, _)| Field(i as u32))
             .collect();
-        let query_parser = QueryParser::new(schema.clone(), default_fields, index.tokenizers().clone());
+        let query_parser =
+            QueryParser::new(schema.clone(), default_fields, index.tokenizers().clone());
+        let reader = index.reader().unwrap();
         IndexServer {
-            index,
+            reader,
             query_parser,
             schema,
         }
@@ -115,25 +109,23 @@ impl IndexServer {
             id: doc_address.doc(),
         }
     }
-    
+
     fn search(&self, q: String, num_hits: usize) -> tantivy::Result<Serp> {
-        let query = self.query_parser.parse_query(&q).expect("Parsing the query failed");
-        let searcher = self.index.searcher();
-        let mut count_collector = CountCollector::default();
-        let mut top_collector = TopCollector::with_limit(num_hits);
+        let query = self
+            .query_parser
+            .parse_query(&q)
+            .expect("Parsing the query failed");
+        let searcher = self.reader.searcher();
         let mut timer_tree = TimerTree::default();
-        {
+        let (top_docs, num_hits) = {
             let _search_timer = timer_tree.open("search");
-            let mut chained_collector = collector::chain()
-                .push(&mut top_collector)
-                .push(&mut count_collector);
-            query.search(&searcher, &mut chained_collector)?;
-        }
+            searcher.search(&query, &(TopDocs::with_limit(num_hits), Count))?
+        };
         let hits: Vec<Hit> = {
             let _fetching_timer = timer_tree.open("fetching docs");
-            top_collector.docs()
+            top_docs
                 .iter()
-                .map(|doc_address| {
+                .map(|(_score, doc_address)| {
                     let doc: Document = searcher.doc(*doc_address).unwrap();
                     self.create_hit(&doc, doc_address)
                 })
@@ -141,7 +133,7 @@ impl IndexServer {
         };
         Ok(Serp {
             q,
-            num_hits: count_collector.count(),
+            num_hits,
             hits,
             timings: timer_tree,
         })
@@ -162,42 +154,53 @@ impl fmt::Display for StringError {
 }
 
 impl Error for StringError {
-    fn description(&self) -> &str { &*self.0 }
+    fn description(&self) -> &str {
+        &*self.0
+    }
 }
 
 fn search(req: &mut Request) -> IronResult<Response> {
     let index_server = req.get::<Read<IndexServer>>().unwrap();
     req.get_ref::<UrlEncodedQuery>()
-        .map_err(|_| IronError::new(StringError(String::from("Failed to decode error")), status::BadRequest))
+        .map_err(|_| {
+            IronError::new(
+                StringError(String::from("Failed to decode error")),
+                status::BadRequest,
+            )
+        })
         .and_then(|ref qs_map| {
             let num_hits: usize = qs_map
                 .get("nhits")
                 .and_then(|nhits_str| usize::from_str(&nhits_str[0]).ok())
                 .unwrap_or(10);
-            let query = qs_map
-                .get("q")
-                .ok_or_else(|| IronError::new(StringError(String::from("Parameter q is missing from the query")), status::BadRequest))?[0].clone();
+            let query = qs_map.get("q").ok_or_else(|| {
+                IronError::new(
+                    StringError(String::from("Parameter q is missing from the query")),
+                    status::BadRequest,
+                )
+            })?[0]
+                .clone();
             let serp = index_server.search(query, num_hits).unwrap();
             let resp_json = serde_json::to_string_pretty(&serp).unwrap();
             let content_type = "application/json".parse::<Mime>().unwrap();
-            Ok(Response::with((content_type, status::Ok, format!("{}", resp_json))))
+            Ok(Response::with((
+                content_type,
+                status::Ok,
+                format!("{}", resp_json),
+            )))
         })
-        
 }
-
-
 
 fn run_serve(directory: PathBuf, host: &str) -> tantivy::Result<()> {
     let mut mount = Mount::new();
     let server = IndexServer::load(&directory);
-    
+
     mount.mount("/api", search);
-    
+
     let mut middleware = Chain::new(mount);
     middleware.link(Read::<IndexServer>::both(server));
-    
+
     println!("listening on http://{}", host);
     Iron::new(middleware).http(host).unwrap();
     Ok(())
 }
-
