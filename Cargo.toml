@@ -11,6 +11,7 @@ repository = "https://github.com/tantivy-search/tantivy-cli"
 readme = "README.md"
 keywords = ["search", "information", "retrieval"]
 license = "MIT"
+edition = "2018"
 
 [dependencies]
 time = "0.1"

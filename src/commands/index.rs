@@ -154,7 +154,7 @@ enum DocumentSource {
 }
 
 impl DocumentSource {
-    fn read(&self) -> io::Result<BufReader<Box<Read>>> {
+    fn read(&self) -> io::Result<BufReader<Box<dyn Read>>> {
         Ok(match self {
             &DocumentSource::FromPipe => BufReader::new(Box::new(io::stdin())),
             &DocumentSource::FromFile(ref filepath) => {

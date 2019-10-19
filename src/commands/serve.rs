@@ -38,7 +38,7 @@ use tantivy::{DocAddress, Score};
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexReader;
-use timer::TimerTree;
+use crate::timer::TimerTree;
 use urlencoded::UrlEncodedQuery;
 
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
