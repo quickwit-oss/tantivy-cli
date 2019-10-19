@@ -104,7 +104,7 @@ impl IndexServer {
         }
     }
 
-    fn create_hit(&self, score: Score, doc: &Document, doc_address: &DocAddress) -> Hit {
+    fn create_hit(&self, score: Score, doc: &Document, doc_address: DocAddress) -> Hit {
         Hit {
             score,
             doc: self.schema.to_named_doc(&doc),
@@ -129,7 +129,7 @@ impl IndexServer {
                 .iter()
                 .map(|(score, doc_address)| {
                     let doc: Document = searcher.doc(*doc_address).unwrap();
-                    self.create_hit(*score, &doc, doc_address)
+                    self.create_hit(*score, &doc, *doc_address)
                 })
                 .collect()
         };
