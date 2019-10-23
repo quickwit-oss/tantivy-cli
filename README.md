@@ -162,7 +162,7 @@ If you are in a rush you can [download 100 articles in the right format here (11
 
 The `index` command will index your document.
 By default it will use as 3 thread, each with a buffer size of 1GB split a
-accross these threads. 
+across these threads. 
 
 
 ```
