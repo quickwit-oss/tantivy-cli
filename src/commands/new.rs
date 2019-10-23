@@ -3,6 +3,7 @@ use ansi_term::Style;
 use clap::ArgMatches;
 use serde_json;
 use std::convert::From;
+use std::fs;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
@@ -10,8 +11,6 @@ use tantivy;
 use tantivy::schema::Cardinality;
 use tantivy::schema::*;
 use tantivy::Index;
-use std::fs;
-
 
 pub fn run_new_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
@@ -29,7 +28,6 @@ fn prompt_input<P: Fn(&str) -> Result<(), String>>(prompt_text: &str, predicate:
         let mut buffer = String::new();
         io::stdin()
             .read_line(&mut buffer)
-            .ok()
             .expect("Failed to read line");
         let answer = buffer.trim_end().to_string();
         match predicate(&answer) {
@@ -43,6 +41,7 @@ fn prompt_input<P: Fn(&str) -> Result<(), String>>(prompt_text: &str, predicate:
     }
 }
 
+// TODO move into core tantivy
 fn field_name_validate(field_name: &str) -> Result<(), String> {
     if is_valid_field_name(field_name) {
         Ok(())
@@ -70,6 +69,30 @@ fn prompt_options(msg: &str, codes: Vec<char>) -> char {
     let message = format!("{} ({})", msg, options);
     let entry = prompt_input(&message, predicate);
     entry.chars().next().unwrap().to_ascii_uppercase()
+}
+
+fn prompt_field_type(msg: &str, codes: Vec<&str>) -> tantivy::schema::Type {
+    let options = codes.join("/");
+    let predicate = |entry: &str| {
+        // TODO make case-insensitive, currently has to match the options precisely
+        if codes.contains(&entry) {
+            return Ok(());
+        } else {
+            return Err(format!("Invalid input. Options are ({})", options));
+        }
+    };
+    let message = format!("{} ({})", msg, options);
+    let prompt_output = prompt_input(&message, predicate);
+    match prompt_output.to_ascii_uppercase().as_ref() {
+        "TEXT" => Type::Str,
+        "U64" => Type::U64,
+        "I64" => Type::I64,
+        // "F64" => Type::F64,
+        "DATE" => Type::Date,
+        "FACET" => Type::HierarchicalFacet,
+        "BYTES" => Type::Bytes,
+        &_ => Type::Str, // shouldn't be here, the `predicate` fails before here
+    }
 }
 
 fn prompt_yn(msg: &str) -> bool {
@@ -107,28 +130,63 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
     schema_builder.add_text_field(field_name, text_options);
 }
 
-fn ask_add_field_u64(field_name: &str, schema_builder: &mut SchemaBuilder) {
-    let mut u64_options = IntOptions::default();
+fn ask_add_num_field_with_options(
+    field_name: &str,
+    field_type: Type,
+    schema_builder: &mut SchemaBuilder,
+) {
+    let mut int_options = IntOptions::default();
     if prompt_yn("Should the field be stored") {
-        u64_options = u64_options.set_stored();
+        int_options = int_options.set_stored();
     }
     if prompt_yn("Should the field be fast") {
-        u64_options = u64_options.set_fast(Cardinality::SingleValue);
+        int_options = int_options.set_fast(Cardinality::SingleValue);
     }
     if prompt_yn("Should the field be indexed") {
-        u64_options = u64_options.set_indexed();
+        int_options = int_options.set_indexed();
     }
-    schema_builder.add_u64_field(field_name, u64_options);
+    match field_type {
+        Type::U64 => {
+            schema_builder.add_u64_field(field_name, int_options);
+        }
+        // Type::F64 => {
+        //     schema_builder.add_f64_field(field_name, int_options);
+        // }
+        Type::I64 => {
+            schema_builder.add_i64_field(field_name, int_options);
+        }
+        Type::Date => {
+            schema_builder.add_date_field(field_name, int_options);
+        }
+        _ => {
+            // We only pass to this function if the field type is numeric
+            unreachable!();
+        }
+    }
 }
 
 fn ask_add_field(schema_builder: &mut SchemaBuilder) {
     println!("\n\n");
     let field_name = prompt_input("New field name ", field_name_validate);
-    let text_or_integer = prompt_options("Text or unsigned 32-bit integer", vec!['T', 'I']);
-    if text_or_integer == 'T' {
-        ask_add_field_text(&field_name, schema_builder);
-    } else {
-        ask_add_field_u64(&field_name, schema_builder);
+
+    // Manually iterate over tantivy::schema::Type and make strings out of them
+    // Can introduce a dependency to do it automatically, but this should be easier
+    let possible_field_types = vec!["Text", "u64", "i64", "f64", "Date", "Facet", "Bytes"];
+    let field_type = prompt_field_type("Choose Field Type", possible_field_types);
+    match field_type {
+        Type::Str => {
+            ask_add_field_text(&field_name, schema_builder);
+        }
+        Type::U64 | Type::Date | Type::I64 => {
+            // Type::U64 | Type::F64 | Type::Date | Type::I64 => {
+            ask_add_num_field_with_options(&field_name, field_type, schema_builder);
+        }
+        Type::HierarchicalFacet => {
+            schema_builder.add_facet_field(&field_name);
+        }
+        Type::Bytes => {
+            schema_builder.add_bytes_field(&field_name);
+        }
     }
 }
 
@@ -142,7 +200,7 @@ fn run_new(directory: PathBuf) -> tantivy::Result<()> {
         Style::new()
             .bold()
             .fg(Green)
-            .paint("Let's define it's schema!")
+            .paint("First define its schema!")
     );
     let mut schema_builder = SchemaBuilder::default();
     loop {

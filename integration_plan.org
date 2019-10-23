@@ -1,0 +1,18 @@
+* Integrate cli as a binary built as part of tantivy-core
+** Pros
+*** Builds every commit
+*** Allows prospective users to try tantivy
+** Cons
+*** Increases build time
+*** Slows down core feature development
+    If every core feature requires changing the example cli, it will slow down review and fixing of core library functionality
+
+* Outline
+** DONE Update to rust edition 2018
+   CLOSED: [2019-10-19 Sat 20:28]
+** DONE Add all datatypes supported by the library to the dialog
+   CLOSED: [2019-10-19 Sat 22:33]
+** TODO test locally with a dependency on master of local tantivy
+* Further work
+** TODO Skip fields found in json, but not in the schema instead of erroring
+
