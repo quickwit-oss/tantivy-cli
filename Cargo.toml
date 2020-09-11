@@ -1,6 +1,6 @@
 [package]
 name = "tantivy-cli"
-version = "0.10.0"
+version = "0.13.0"
 authors = ["Paul Masurel <paul.masurel@gmail.com>"]
 
 description = """Command line interface for Tantivy, a search engine library."""
@@ -26,17 +26,15 @@ ansi_term = "0.8"
 urlencoded = "0.4"
 mount = "0.2"
 chan = "0.1"
-bincode = "0.4"
-byteorder = "0.5"
-log = "0.3"
 futures = "0.3"
-env_logger = "0.3"
-tantivy = "0.13"
+slog-term = "2.6"
+slog-async = "2.5"
+slog-json = "2.3"
+tantivy = {path = "../tantivy"}
 
 [[bin]]
 name = "tantivy"
 path = "src/main.rs"
-
 
 [profile.release]
 opt-level = 3

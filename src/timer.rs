@@ -1,4 +1,5 @@
 use time::PreciseTime;
+use serde::Serialize;
 
 pub struct OpenTimer<'a> {
     name: &'static str,

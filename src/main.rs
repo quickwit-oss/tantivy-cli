@@ -1,35 +1,11 @@
-#[macro_use]
-extern crate clap;
-extern crate serde_json;
-#[macro_use]
-extern crate log;
-extern crate ansi_term;
-extern crate bincode;
-extern crate byteorder;
-extern crate chan;
-extern crate env_logger;
-extern crate futures;
-extern crate iron;
-extern crate mount;
-extern crate persistent;
-extern crate staticfile;
-extern crate tantivy;
-extern crate time;
-extern crate urlencoded;
-
-#[macro_use]
-extern crate serde_derive;
-
 use std::io::Write;
-
 use clap::{App, AppSettings, Arg, SubCommand};
+use commands::{run_bench_cli, run_index_cli, run_merge_cli, run_new_cli, run_search_cli, run_serve_cli};
+use tantivy::slog::{Drain, Level, Logger, o};
 mod commands;
 pub mod timer;
-use self::commands::*;
 
 fn main() {
-    env_logger::init().unwrap();
-
     let index_arg = Arg::with_name("index")
         .short("i")
         .long("index")
@@ -42,6 +18,9 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .author("Paul Masurel <paul.masurel@gmail.com>")
         .about("Tantivy Search Engine's command line interface.")
+        .arg(Arg::with_name("verbose")
+            .short("v")
+            .help("Sets as verbose."))
         .subcommand(
             SubCommand::with_name("new")
                 .about("Create a new index. The schema will be populated with a simple example schema")
@@ -124,8 +103,21 @@ fn main() {
         )
         .get_matches();
 
+    let level: Level = 
+     if cli_options.is_present("verbose") {
+        Level::Debug
+    } else {
+        Level::Info
+    };
+
     let (subcommand, some_options) = cli_options.subcommand();
     let options = some_options.unwrap();
+
+    let decorator = slog_term::TermDecorator::new().build();
+    let drain = slog_term::FullFormat::new(decorator).build().fuse();
+        let drain = slog_async::Async::new(drain).build().filter_level(level).fuse();
+    let logger = Logger::root(drain.fuse(), o!());
+
     let run_cli = match subcommand {
         "new" => run_new_cli,
         "index" => run_index_cli,
@@ -136,7 +128,7 @@ fn main() {
         _ => panic!("Subcommand {} is unknown", subcommand),
     };
 
-    if let Err(ref e) = run_cli(options) {
+    if let Err(ref e) = run_cli(options, &logger) {
         let stderr = &mut std::io::stderr();
         let errmsg = "Error writing ot stderr";
         writeln!(stderr, "{}", e).expect(errmsg);

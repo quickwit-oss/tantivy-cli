@@ -1,22 +1,26 @@
-use clap::ArgMatches;
+use crate::timer::TimerTree;
+use clap::{ArgMatches, value_t};
 use std::fs::File;
 use std::io;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::path::Path;
 use std::path::PathBuf;
-use tantivy::collector::{Count, TopDocs};
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema};
+use tantivy::slog;
 use tantivy::Index;
-use crate::timer::TimerTree;
+use tantivy::{
+    collector::{Count, TopDocs},
+    slog::Logger,
+};
 
-pub fn run_bench_cli(matches: &ArgMatches) -> Result<(), String> {
+pub fn run_bench_cli(matches: &ArgMatches, logger: &Logger) -> Result<(), String> {
     let index_path = PathBuf::from(matches.value_of("index").unwrap());
     let queries_path = PathBuf::from(matches.value_of("queries").unwrap()); // the unwrap is safe as long as it is comming from the main cli.
     let num_repeat = value_t!(matches, "num_repeat", usize)
         .map_err(|e| format!("Failed to read num_repeat argument as an integer. {:?}", e))?;
-    run_bench(&index_path, &queries_path, num_repeat).map_err(From::from)
+    run_bench(&index_path, &queries_path, num_repeat, logger).map_err(From::from)
 }
 
 fn extract_search_fields(schema: &Schema) -> Vec<Field> {
@@ -37,11 +41,15 @@ fn read_query_file(query_path: &Path) -> io::Result<Vec<String>> {
     Ok(queries)
 }
 
-fn run_bench(index_path: &Path, query_filepath: &Path, num_repeat: usize) -> Result<(), String> {
-    println!("index_path : {:?}", index_path);
-    println!("Query : {:?}", index_path);
-    println!("-------------------------------\n\n\n");
-
+fn run_bench(
+    index_path: &Path,
+    query_filepath: &Path,
+    num_repeat: usize,
+    logger: &Logger,
+) -> Result<(), String> {
+    slog::info!(logger, "start bench";
+     "index_path" => format!("{:?}", index_path),
+     "query_filepath" => format!("{:?}", &query_filepath));
     let index =
         Index::open_in_dir(index_path).map_err(|e| format!("Failed to open index.\n{:?}", e))?;
     let searcher = index

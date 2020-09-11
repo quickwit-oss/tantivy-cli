@@ -1,3 +1,4 @@
+use crate::timer::TimerTree;
 /// This tantivy command starts a http server (by default on port 3000)
 ///
 /// Currently the only entrypoint is /api/
@@ -19,6 +20,7 @@ use iron::status;
 use iron::typemap::Key;
 use mount::Mount;
 use persistent::Read;
+use serde::Serialize;
 use serde_json;
 use std::convert::From;
 use std::error::Error;
@@ -26,21 +28,21 @@ use std::fmt::{self, Debug};
 use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
-use tantivy;
 use tantivy::collector::{Count, TopDocs};
 use tantivy::query::QueryParser;
 use tantivy::schema::Field;
 use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
 use tantivy::schema::Schema;
-use tantivy::{DocAddress, Score};
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexReader;
-use crate::timer::TimerTree;
+use tantivy::{self, slog::Logger};
+use tantivy::{DocAddress, Score};
 use urlencoded::UrlEncodedQuery;
+use clap::value_t;
 
-pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
+pub fn run_serve_cli(matches: &ArgMatches, _logger: &Logger) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
     let port = value_t!(matches, "port", u16).unwrap_or(3000u16);
     let host_str = matches.value_of("host").unwrap_or("localhost");

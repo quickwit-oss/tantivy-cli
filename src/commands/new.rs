@@ -7,12 +7,12 @@ use std::fs;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
-use tantivy;
 use tantivy::schema::Cardinality;
 use tantivy::schema::*;
 use tantivy::Index;
+use tantivy::{self, slog::Logger};
 
-pub fn run_new_cli(matches: &ArgMatches) -> Result<(), String> {
+pub fn run_new_cli(matches: &ArgMatches, _logger: &Logger) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
     run_new(index_directory).map_err(|e| format!("{:?}", e))
 }

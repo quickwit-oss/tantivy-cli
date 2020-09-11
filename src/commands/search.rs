@@ -3,13 +3,13 @@ use serde_json;
 use std::convert::From;
 use std::path::Path;
 use std::path::PathBuf;
-use tantivy;
 use tantivy::query::QueryParser;
 use tantivy::schema::Field;
 use tantivy::schema::FieldType;
+use tantivy::{self, slog::Logger};
 use tantivy::{Index, TERMINATED};
 
-pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
+pub fn run_search_cli(matches: &ArgMatches, _logger: &Logger) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
     let query = matches.value_of("query").unwrap();
     run_search(&index_directory, &query).map_err(|e| format!("{:?}", e))
