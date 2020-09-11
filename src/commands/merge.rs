@@ -1,13 +1,13 @@
 extern crate tantivy;
 
 use clap::ArgMatches;
-use futures::Future;
+use futures::executor::block_on;
 use std::path::PathBuf;
 use tantivy::{Index, SegmentMeta};
 
 const HEAP_SIZE: usize = 300_000_000;
 
-fn error_msg(err: tantivy::Error) -> String {
+fn error_msg(err: tantivy::TantivyError) -> String {
     format!("Merge failed : {:?}", err)
 }
 
@@ -21,16 +21,14 @@ pub fn run_merge_cli(argmatch: &ArgMatches) -> Result<(), String> {
 fn run_merge(path: PathBuf) -> tantivy::Result<()> {
     let index = Index::open_in_dir(&path)?;
     let segments = index.searchable_segment_ids()?;
-    let segment_meta: SegmentMeta = index
+    let segment_meta: SegmentMeta = block_on(index
         .writer(HEAP_SIZE)?
-        .merge(&segments)?
-        .wait()
-        .expect("Merge failed");
+        .merge(&segments))?;
     //.map_err(|_| tantivy::Error::ErrorInThread(String::from("Merge got cancelled")));
     println!("Merge finished with segment meta {:?}", segment_meta);
     println!("Garbage collect irrelevant segments.");
-    Index::open_in_dir(&path)?
+    block_on(Index::open_in_dir(&path)?
         .writer_with_num_threads(1, 40_000_000)?
-        .garbage_collect_files()?;
+        .garbage_collect_files())?;
     Ok(())
 }

@@ -187,6 +187,9 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
         Type::Bytes => {
             schema_builder.add_bytes_field(&field_name);
         }
+        Type::F64 => {
+            unimplemented!();
+        }
     }
 }
 

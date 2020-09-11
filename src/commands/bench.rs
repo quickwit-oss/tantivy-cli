@@ -22,10 +22,8 @@ pub fn run_bench_cli(matches: &ArgMatches) -> Result<(), String> {
 fn extract_search_fields(schema: &Schema) -> Vec<Field> {
     schema
         .fields()
-        .iter()
-        .enumerate()
         .filter(|&(_, field_entry)| field_entry.is_indexed())
-        .map(|(field_id, _)| Field(field_id as u32))
+        .map(|(field, _)| field)
         .collect()
 }
 

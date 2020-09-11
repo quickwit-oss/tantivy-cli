@@ -33,7 +33,6 @@ use tantivy::schema::Field;
 use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
 use tantivy::schema::Schema;
-use tantivy::tokenizer::*;
 use tantivy::{DocAddress, Score};
 use tantivy::Document;
 use tantivy::Index;
@@ -71,37 +70,27 @@ struct IndexServer {
 }
 
 impl IndexServer {
-    fn load(path: &Path) -> IndexServer {
-        let index = Index::open_in_dir(path).unwrap();
-        index.tokenizers().register(
-            "commoncrawl",
-            SimpleTokenizer
-                .filter(RemoveLongFilter::limit(40))
-                .filter(LowerCaser)
-                .filter(AlphaNumOnlyFilter)
-                .filter(Stemmer::new(Language::English)),
-        );
+    fn load(path: &Path) -> tantivy::Result<IndexServer> {
+        let index = Index::open_in_dir(path)?;
         let schema = index.schema();
         let default_fields: Vec<Field> = schema
             .fields()
-            .iter()
-            .enumerate()
-            .filter(|&(_, ref field_entry)| match *field_entry.field_type() {
+            .filter(|&(_, field_entry)| match field_entry.field_type() {
                 FieldType::Str(ref text_field_options) => {
                     text_field_options.get_indexing_options().is_some()
                 }
                 _ => false,
             })
-            .map(|(i, _)| Field(i as u32))
+            .map(|(field, _)| field)
             .collect();
         let query_parser =
             QueryParser::new(schema.clone(), default_fields, index.tokenizers().clone());
-        let reader = index.reader().unwrap();
-        IndexServer {
+        let reader = index.reader()?;
+        Ok(IndexServer {
             reader,
             query_parser,
             schema,
-        }
+        })
     }
 
     fn create_hit(&self, score: Score, doc: &Document, doc_address: DocAddress) -> Hit {
@@ -195,7 +184,7 @@ fn search(req: &mut Request) -> IronResult<Response> {
 
 fn run_serve(directory: PathBuf, host: &str) -> tantivy::Result<()> {
     let mut mount = Mount::new();
-    let server = IndexServer::load(&directory);
+    let server = IndexServer::load(&directory)?;
 
     mount.mount("/api", search);
 

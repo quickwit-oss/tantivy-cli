@@ -29,9 +29,9 @@ chan = "0.1"
 bincode = "0.4"
 byteorder = "0.5"
 log = "0.3"
-futures = "0.1"
+futures = "0.3"
 env_logger = "0.3"
-tantivy = "0.10"
+tantivy = "0.13"
 
 [[bin]]
 name = "tantivy"
