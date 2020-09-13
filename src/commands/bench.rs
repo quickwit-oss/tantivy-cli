@@ -1,3 +1,4 @@
+use crate::timer::TimerTree;
 use clap::ArgMatches;
 use std::fs::File;
 use std::io;
@@ -9,12 +10,12 @@ use tantivy::collector::{Count, TopDocs};
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema};
 use tantivy::Index;
-use crate::timer::TimerTree;
 
 pub fn run_bench_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_path = PathBuf::from(matches.value_of("index").unwrap());
     let queries_path = PathBuf::from(matches.value_of("queries").unwrap()); // the unwrap is safe as long as it is comming from the main cli.
-    let num_repeat = value_t!(matches, "num_repeat", usize)
+    let num_repeat = matches
+        .value_of_t("num_repeat")
         .map_err(|e| format!("Failed to read num_repeat argument as an integer. {:?}", e))?;
     run_bench(&index_path, &queries_path, num_repeat).map_err(From::from)
 }

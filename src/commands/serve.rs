@@ -4,7 +4,7 @@
 /// and it takes the following query string argument
 ///
 /// - `q=` :    your query
-///  - `nhits`:  the number of hits that should be returned. (default to 10)   
+///  - `nhits`:  the number of hits that should be returned. (default to 10)
 ///
 ///
 /// For instance, the following call should return the 20 most relevant
@@ -12,6 +12,7 @@
 ///
 ///     http://localhost:3000/api/?q=fulmicoton&&nhits=20
 ///
+use crate::timer::TimerTree;
 use clap::ArgMatches;
 use iron::mime::Mime;
 use iron::prelude::*;
@@ -19,6 +20,7 @@ use iron::status;
 use iron::typemap::Key;
 use mount::Mount;
 use persistent::Read;
+use serde_derive::Serialize;
 use serde_json;
 use std::convert::From;
 use std::error::Error;
@@ -33,16 +35,15 @@ use tantivy::schema::Field;
 use tantivy::schema::FieldType;
 use tantivy::schema::NamedFieldDocument;
 use tantivy::schema::Schema;
-use tantivy::{DocAddress, Score};
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexReader;
-use crate::timer::TimerTree;
+use tantivy::{DocAddress, Score};
 use urlencoded::UrlEncodedQuery;
 
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
-    let port = value_t!(matches, "port", u16).unwrap_or(3000u16);
+    let port = matches.value_of_t("port").unwrap_or(3000u16);
     let host_str = matches.value_of("host").unwrap_or("localhost");
     let host = format!("{}:{}", host_str, port);
     run_serve(index_directory, &host).map_err(|e| format!("{:?}", e))
@@ -139,7 +140,7 @@ impl Key for IndexServer {
 struct StringError(String);
 
 impl fmt::Display for StringError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Debug::fmt(self, f)
     }
 }
@@ -150,7 +151,7 @@ impl Error for StringError {
     }
 }
 
-fn search(req: &mut Request) -> IronResult<Response> {
+fn search(req: &mut Request<'_, '_>) -> IronResult<Response> {
     let index_server = req.get::<Read<IndexServer>>().unwrap();
     req.get_ref::<UrlEncodedQuery>()
         .map_err(|_| {

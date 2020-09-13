@@ -14,7 +14,7 @@ use tantivy::merge_policy::NoMergePolicy;
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexWriter;
-use time::PreciseTime;
+use time::Instant;
 
 pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(argmatch.value_of("index").unwrap());
@@ -23,12 +23,14 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
         .map(|path| DocumentSource::FromFile(PathBuf::from(path)))
         .unwrap_or(DocumentSource::FromPipe);
     let no_merge = argmatch.is_present("nomerge");
-    let mut num_threads = value_t!(argmatch, "num_threads", usize)
+    let mut num_threads = argmatch
+        .value_of_t("num_threads")
         .map_err(|_| format!("Failed to read num_threads argument as an integer."))?;
     if num_threads == 0 {
         num_threads = 1;
     }
-    let buffer_size = value_t!(argmatch, "memory_size", usize)
+    let buffer_size: usize = argmatch
+        .value_of_t("memory_size")
         .map_err(|_| format!("Failed to read the buffer size argument as an integer."))?;
     let buffer_size_per_thread = buffer_size / num_threads;
     run_index(
@@ -41,6 +43,7 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
     .map_err(|e| format!("Indexing failed : {:?}", e))
 }
 
+//noinspection RsExternalLinter
 fn run_index(
     directory: PathBuf,
     document_source: DocumentSource,
@@ -62,7 +65,7 @@ fn run_index(
     });
 
     let num_threads_to_parse_json = cmp::max(1, num_threads / 4);
-    info!("Using {} threads to parse json", num_threads_to_parse_json);
+    log::info!("Using {} threads to parse json", num_threads_to_parse_json);
     for _ in 0..num_threads_to_parse_json {
         let schema_clone = schema.clone();
         let doc_sender_clone = doc_sender.clone();
@@ -92,11 +95,11 @@ fn run_index(
         index_writer.set_merge_policy(Box::new(NoMergePolicy));
     }
 
-    let start_overall = PreciseTime::now();
+    let start_overall = Instant::now();
     let index_result = index_documents(&mut index_writer, doc_receiver);
     {
-        let duration = start_overall.to(PreciseTime::now());
-        info!("Indexing the documents took {} s", duration.num_seconds());
+        let duration = start_overall - Instant::now();
+        log::info!("Indexing the documents took {} s", duration.whole_seconds());
     }
 
     match index_result {
@@ -106,10 +109,10 @@ fn run_index(
             index_writer.wait_merging_threads()?;
             println!("Terminated successfully!");
             {
-                let duration = start_overall.to(PreciseTime::now());
-                info!(
+                let duration = start_overall - Instant::now();
+                log::info!(
                     "Indexing the documents took {} s overall (indexing + merge)",
-                    duration.num_seconds()
+                    duration.whole_seconds()
                 );
             }
             Ok(())
@@ -129,17 +132,16 @@ fn index_documents(
 ) -> tantivy::Result<u64> {
     let group_count = 100_000;
     let mut num_docs = 0;
-    let mut cur = PreciseTime::now();
+    let mut cur = Instant::now();
     for doc in doc_receiver {
         index_writer.add_document(doc);
         if num_docs > 0 && (num_docs % group_count == 0) {
             println!("{} Docs", num_docs);
-            let new = PreciseTime::now();
-            let elapsed = cur.to(new);
+            let new = Instant::now();
+            let elapsed = cur - new;
             println!(
                 "{:?} docs / hour",
-                group_count * 3600 * 1_000_000 as u64
-                    / (elapsed.num_microseconds().unwrap() as u64)
+                group_count * 3600 * 1_000_000 as u64 / (elapsed.whole_microseconds() as u64)
             );
             cur = new;
         }
