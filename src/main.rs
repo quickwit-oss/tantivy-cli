@@ -1,40 +1,18 @@
-#[macro_use]
-extern crate clap;
-extern crate serde_json;
-#[macro_use]
-extern crate log;
-extern crate ansi_term;
-extern crate bincode;
-extern crate byteorder;
-extern crate chan;
-extern crate env_logger;
-extern crate futures;
-extern crate iron;
-extern crate mount;
-extern crate persistent;
-extern crate staticfile;
-extern crate tantivy;
-extern crate time;
-extern crate urlencoded;
-
-#[macro_use]
-extern crate serde_derive;
-
 use std::io::Write;
 
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg};
 mod commands;
 pub mod timer;
 use self::commands::*;
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     let index_arg = Arg::with_name("index")
-        .short("i")
+        .short('i')
         .long("index")
         .value_name("directory")
-        .help("Tantivy index directory filepath")
+        .about("Tantivy index directory filepath")
         .required(true);
 
     let cli_options = App::new("Tantivy")
@@ -43,82 +21,82 @@ fn main() {
         .author("Paul Masurel <paul.masurel@gmail.com>")
         .about("Tantivy Search Engine's command line interface.")
         .subcommand(
-            SubCommand::with_name("new")
+            App::new("new")
                 .about("Create a new index. The schema will be populated with a simple example schema")
                 .arg(index_arg.clone())
         )
         .subcommand(
-            SubCommand::with_name("serve")
+            App::new("serve")
                 .about("Start a server")
                 .arg(index_arg.clone())
                 .arg(Arg::with_name("host")
                     .long("host")
                     .value_name("host")
-                    .help("host to listen to")
+                    .about("host to listen to")
                 )
                 .arg(Arg::with_name("port")
-                    .short("p")
+                    .short('p')
                     .long("port")
                     .value_name("port")
-                    .help("Port")
+                    .about("Port")
                     .default_value("localhost")
                 )
         )
         .subcommand(
-            SubCommand::with_name("index")
+            App::new("index")
                 .about("Index files")
                 .arg(index_arg.clone())
                 .arg(Arg::with_name("file")
-                    .short("f")
+                    .short('f')
                     .long("file")
                     .value_name("file")
-                    .help("File containing the documents to index."))
+                    .about("File containing the documents to index."))
                 .arg(Arg::with_name("num_threads")
-                    .short("t")
+                    .short('t')
                     .long("num_threads")
                     .value_name("num_threads")
-                    .help("Number of indexing threads. By default num cores - 1 will be used")
+                    .about("Number of indexing threads. By default num cores - 1 will be used")
                     .default_value("3"))
                 .arg(Arg::with_name("memory_size")
-                    .short("m")
+                    .short('m')
                     .long("memory_size")
                     .value_name("memory_size")
-                    .help("Total memory_size in bytes. It will be split for the different threads.")
+                    .about("Total memory_size in bytes. It will be split for the different threads.")
                     .default_value("1000000000"))
                 .arg(Arg::with_name("nomerge")
                     .long("nomerge")
-                    .help("Do not merge segments"))
+                    .about("Do not merge segments"))
         )
         .subcommand(
-            SubCommand::with_name("search")
+            App::new("search")
                 .about("Search an index.")
                 .arg(index_arg.clone())
                 .arg(Arg::with_name("query")
-                    .short("q")
+                    .short('q')
                     .long("query")
                     .value_name("query")
-                    .help("Query")
+                    .about("Query")
                     .required(true))
         )
         .subcommand(
-            SubCommand::with_name("bench")
+            App::new("bench")
                 .about("Run a benchmark on your index")
                 .arg(index_arg.clone())
                 .arg(Arg::with_name("queries")
-                    .short("q")
+                    .short('q')
                     .long("queries")
                     .value_name("queries")
-                    .help("File containing queries (one per line) to run in the benchmark.")
+                    .about("File containing queries (one per line) to run in the benchmark.")
                     .required(true))
                 .arg(Arg::with_name("num_repeat")
-                    .short("n")
+                    .short('n')
                     .long("num_repeat")
                     .value_name("num_repeat")
-                    .help("Number of times to repeat the benchmark.")
+                    .about("Number of times to repeat the benchmark.")
                     .default_value("1"))
         )
         .subcommand(
-            SubCommand::with_name("merge")
+            App::new("merge")
                 .about("Merge all the segments of an index")
                 .arg(index_arg.clone())
         )

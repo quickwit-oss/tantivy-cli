@@ -1,9 +1,10 @@
-use time::PreciseTime;
+use serde_derive::Serialize;
+use time::Instant;
 
 pub struct OpenTimer<'a> {
     name: &'static str,
     timer_tree: &'a mut TimerTree,
-    start: PreciseTime,
+    start: Instant,
     depth: u32,
 }
 
@@ -12,11 +13,11 @@ impl<'a> OpenTimer<'a> {
     ///
     /// The timer is stopped automatically
     /// when the `OpenTimer` is dropped.
-    pub fn open(&mut self, name: &'static str) -> OpenTimer {
+    pub fn open(&mut self, name: &'static str) -> OpenTimer<'_> {
         OpenTimer {
             name,
             timer_tree: self.timer_tree,
-            start: PreciseTime::now(),
+            start: Instant::now(),
             depth: self.depth + 1,
         }
     }
@@ -26,11 +27,7 @@ impl<'a> Drop for OpenTimer<'a> {
     fn drop(&mut self) {
         self.timer_tree.timings.push(Timing {
             name: self.name,
-            duration: self
-                .start
-                .to(PreciseTime::now())
-                .num_microseconds()
-                .unwrap(),
+            duration: (self.start - Instant::now()).whole_microseconds() as i64,
             depth: self.depth,
         });
     }
@@ -57,11 +54,11 @@ impl TimerTree {
     }
 
     /// Open a new named subtask
-    pub fn open(&mut self, name: &'static str) -> OpenTimer {
+    pub fn open(&mut self, name: &'static str) -> OpenTimer<'_> {
         OpenTimer {
             name,
             timer_tree: self,
-            start: PreciseTime::now(),
+            start: Instant::now(),
             depth: 0,
         }
     }
