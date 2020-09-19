@@ -31,7 +31,7 @@ byteorder = "0.5"
 log = "0.3"
 futures = "0.3"
 env_logger = "0.3"
-tantivy = "0.13"
+tantivy = {git="https://github.com/tantivy-search/tantivy/", rev="37e7af322d18c7607d57ad7bf038275e109c680e"}
 
 [[bin]]
 name = "tantivy"
