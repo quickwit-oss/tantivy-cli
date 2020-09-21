@@ -10,7 +10,7 @@
 /// For instance, the following call should return the 20 most relevant
 /// hits for fulmicoton.
 ///
-///     http://localhost:3000/api/?q=fulmicoton&&nhits=20
+///     http://localhost:3000/api/?q=fulmicoton&nhits=20
 ///
 use crate::timer::TimerTree;
 use clap::ArgMatches;
