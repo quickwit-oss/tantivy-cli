@@ -102,7 +102,7 @@ impl IndexServer {
         }
     }
 
-    fn search(&self, q: String, num_hits: usize) -> tantivy::Result<Serp> {
+    fn search(&self, q: String, num_hits: usize, offset: usize) -> tantivy::Result<Serp> {
         let query = self
             .query_parser
             .parse_query(&q)
@@ -111,7 +111,7 @@ impl IndexServer {
         let mut timer_tree = TimerTree::default();
         let (top_docs, num_hits) = {
             let _search_timer = timer_tree.open("search");
-            searcher.search(&query, &(TopDocs::with_limit(num_hits), Count))?
+            searcher.search(&query, &(TopDocs::with_limit(num_hits).and_offset(offset), Count))?
         };
         let hits: Vec<Hit> = {
             let _fetching_timer = timer_tree.open("fetching docs");
@@ -172,7 +172,11 @@ fn search(req: &mut Request<'_, '_>) -> IronResult<Response> {
                 )
             })?[0]
                 .clone();
-            let serp = index_server.search(query, num_hits).unwrap();
+            let offset: usize = qs_map
+                .get("offset")
+                .and_then(|offset_str| usize::from_str(&offset_str[0]).ok())
+                .unwrap_or(0);
+            let serp = index_server.search(query, num_hits, offset).unwrap();
             let resp_json = serde_json::to_string_pretty(&serp).unwrap();
             let content_type = "application/json".parse::<Mime>().unwrap();
             Ok(Response::with((
