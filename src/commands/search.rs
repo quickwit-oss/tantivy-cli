@@ -32,7 +32,6 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
     let query = query_parser.parse_query(query)?;
     let searcher = index.reader()?.searcher();
     let weight = query.weight(&searcher, false)?;
-    let schema = index.schema();
     for segment_reader in searcher.segment_readers() {
         let mut scorer = weight.scorer(segment_reader, 1.0)?;
         let store_reader = segment_reader.get_store_reader();
