@@ -35,8 +35,7 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
     let searcher = index.reader()?.searcher();
     let weight = query.weight(&searcher, false)?;
 
-    let stdout = io::stdout();
-    let mut handle = io::BufWriter::new(stdout);
+    let mut stdout = io::BufWriter::new(io::stdout());
 
     for segment_reader in searcher.segment_readers() {
         let mut scorer = weight.scorer(segment_reader, 1.0)?;
@@ -46,7 +45,7 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
             let doc = store_reader.get(doc_id)?;
             let named_doc = schema.to_named_doc(&doc);
             if let Err(e) = writeln!(
-                handle,
+                stdout,
                 "{}",
                 serde_json::to_string(&named_doc).unwrap()
             ) {
@@ -58,6 +57,9 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
             scorer.advance();
         }
     }
+
+    stdout.flush()?;
+
     Ok(())
 }
 
