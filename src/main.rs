@@ -1,8 +1,8 @@
 use std::io::Write;
 use clap::{App, AppSettings, Arg, SubCommand};
-use commands::{run_bench_cli, run_index_cli, run_merge_cli, run_new_cli, run_search_cli, run_serve_cli};
-use tantivy::slog::{Drain, Level, Logger, o};
 mod commands;
+use commands::{run_bench_cli, run_index_cli, run_merge_cli, run_new_cli, run_search_cli, run_serve_cli};
+use slog_kickstarter::SlogKickstarter;
 pub mod timer;
 
 fn main() {
@@ -18,9 +18,6 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .author("Paul Masurel <paul.masurel@gmail.com>")
         .about("Tantivy Search Engine's command line interface.")
-        .arg(Arg::with_name("verbose")
-            .short("v")
-            .help("Sets as verbose."))
         .subcommand(
             SubCommand::with_name("new")
                 .about("Create a new index. The schema will be populated with a simple example schema")
@@ -103,20 +100,9 @@ fn main() {
         )
         .get_matches();
 
-    let level: Level = 
-     if cli_options.is_present("verbose") {
-        Level::Debug
-    } else {
-        Level::Info
-    };
-
     let (subcommand, some_options) = cli_options.subcommand();
     let options = some_options.unwrap();
-
-    let decorator = slog_term::TermDecorator::new().build();
-    let drain = slog_term::FullFormat::new(decorator).build().fuse();
-        let drain = slog_async::Async::new(drain).build().filter_level(level).fuse();
-    let logger = Logger::root(drain.fuse(), o!());
+    let logger = SlogKickstarter::new("logging-example").init();
 
     let run_cli = match subcommand {
         "new" => run_new_cli,

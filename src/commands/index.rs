@@ -14,7 +14,8 @@ use tantivy::merge_policy::NoMergePolicy;
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexWriter;
-use tantivy::{self, directory::MmapDirectory, slog::error, slog::info, slog::o, slog::Logger};
+use slog_perf::TimeReporter;
+use tantivy::{self, directory::MmapDirectory, slog, slog::error, slog::info, slog::o, slog::Logger};
 use time::PreciseTime;
 
 pub fn run_index_cli(argmatch: &ArgMatches, logger: &Logger) -> Result<(), String> {
@@ -52,13 +53,12 @@ fn run_index(
 ) -> tantivy::Result<()> {
     let num_threads_to_parse_json = cmp::max(1, num_threads / 4);
 
-    let index_logger = logger.new(o!("cmd"=>"index"));
-    info!(&index_logger, "start-indexing-command"; 
+    info!(&logger, "start-indexing-command"; 
          "num-threads-json" => num_threads_to_parse_json,
          "num-threads"=>num_threads,
          "no-merge"=>no_merge,
          "overall-heap-size-in-bytes"=>overall_heap_size_in_bytes);
-    let mmap_directory = MmapDirectory::open_with_logger(&directory, index_logger.clone())?;
+    let mmap_directory = MmapDirectory::open_with_logger(&directory, logger.clone())?;
     let index = Index::open(mmap_directory)?;
 
     let schema = index.schema();
@@ -105,24 +105,19 @@ fn run_index(
         index_writer.set_merge_policy(Box::new(NoMergePolicy));
     }
 
-    let start_overall = PreciseTime::now();
+    let mut commit_time_reporter = TimeReporter::new_with_level("commit", logger.clone(), slog::Level::Info);
+    commit_time_reporter.start("index");
     let index_result = index_documents(&mut index_writer, doc_receiver, logger);
-    {
-        let duration = start_overall.to(PreciseTime::now());
-        info!(&index_logger, "index-finished"; "elapsed_s" => duration.num_seconds());
-    }
+    commit_time_reporter.stop();
+    info!(&logger, "index-finished");
 
     match index_result {
         Ok(opstamp) => {
-            let commit_duration = start_overall.to(PreciseTime::now());
-            info!(index_logger, "commit-success"; "opstamp" => opstamp, "commit-time-s"=>commit_duration.num_seconds());
+            info!(logger, "commit-success"; "opstamp" => opstamp);
+            commit_time_reporter.start("wait-merging-threads");
             index_writer.wait_merging_threads()?;
-                let overall_duration = start_overall.to(PreciseTime::now());
-                info!(
-                    index_logger,
-                    "indexing-stop";
-                    "overall-time-s" => overall_duration.num_seconds(),
-                );
+            commit_time_reporter.stop();
+            commit_time_reporter.finish();
             Ok(())
         }
         Err(e) => {

@@ -4,16 +4,12 @@ use std::fs::File;
 use std::io;
 use std::io::BufRead;
 use std::io::BufReader;
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema};
-use tantivy::slog;
+use tantivy::slog::{self, Logger};
 use tantivy::Index;
-use tantivy::{
-    collector::{Count, TopDocs},
-    slog::Logger,
-};
+use tantivy::collector::{Count, TopDocs};
 
 pub fn run_bench_cli(matches: &ArgMatches, logger: &Logger) -> Result<(), String> {
     let index_path = PathBuf::from(matches.value_of("index").unwrap());

@@ -30,6 +30,8 @@ futures = "0.3"
 slog-term = "2.6"
 slog-async = "2.5"
 slog-json = "2.3"
+slog-perf = "0.2"
+slog-kickstarter = "0.1"
 tantivy = {path = "../tantivy"}
 
 [[bin]]
