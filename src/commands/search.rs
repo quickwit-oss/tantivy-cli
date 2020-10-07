@@ -1,8 +1,10 @@
 use clap::ArgMatches;
 use serde_json;
 use std::convert::From;
+use std::io::{self, ErrorKind, Write};
 use std::path::Path;
 use std::path::PathBuf;
+use std::process;
 use tantivy;
 use tantivy::query::QueryParser;
 use tantivy::schema::Field;
@@ -32,6 +34,9 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
     let query = query_parser.parse_query(query)?;
     let searcher = index.reader()?.searcher();
     let weight = query.weight(&searcher, false)?;
+
+    let mut stdout = io::BufWriter::new(io::stdout());
+
     for segment_reader in searcher.segment_readers() {
         let mut scorer = weight.scorer(segment_reader, 1.0)?;
         let store_reader = segment_reader.get_store_reader();
@@ -39,9 +44,22 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
             let doc_id = scorer.doc();
             let doc = store_reader.get(doc_id)?;
             let named_doc = schema.to_named_doc(&doc);
-            println!("{}", serde_json::to_string(&named_doc).unwrap());
+            if let Err(e) = writeln!(
+                stdout,
+                "{}",
+                serde_json::to_string(&named_doc).unwrap()
+            ) {
+                if e.kind() != ErrorKind::BrokenPipe {
+                    eprintln!("{}", e.to_string());
+                    process::exit(1)
+                }
+            }
             scorer.advance();
         }
     }
+
+    stdout.flush()?;
+
     Ok(())
 }
+
