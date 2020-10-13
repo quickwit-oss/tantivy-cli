@@ -47,8 +47,6 @@ In our case, our documents will contain
 
 We want the title and the body to be tokenized and indexed. We also want 
 to add the term frequency and term positions to our index.
-(To be honest, phrase queries are not yet implemented in tantivy,
-so the positions won't be really useful in this tutorial.)
 
 Running `tantivy new` will start a wizard that will help you
 define the schema of the new index.
@@ -74,32 +72,33 @@ Answer the questions as follows:
 
 
     New field name  ? title
-    Text or unsigned 32-bit integer (T/I) ? T
+    Choose Field Type (Text/u64/i64/f64/Date/Facet/Bytes) ? Text
     Should the field be stored (Y/N) ? Y
     Should the field be indexed (Y/N) ? Y
-    Should the field be tokenized (Y/N) ? Y
+    Should the term be tokenized? (Y/N) ? Y
     Should the term frequencies (per doc) be in the index (Y/N) ? Y
     Should the term positions (per doc) be in the index (Y/N) ? Y
     Add another field (Y/N) ? Y
-
-
-
+    
+    
+    
     New field name  ? body
-    Text or unsigned 32-bit integer (T/I) ? T
+    Choose Field Type (Text/u64/i64/f64/Date/Facet/Bytes) ? Text
     Should the field be stored (Y/N) ? Y
     Should the field be indexed (Y/N) ? Y
-    Should the field be tokenized (Y/N) ? Y
+    Should the term be tokenized? (Y/N) ? Y
     Should the term frequencies (per doc) be in the index (Y/N) ? Y
     Should the term positions (per doc) be in the index (Y/N) ? Y
     Add another field (Y/N) ? Y
-
-
-
+    
+    
+    
     New field name  ? url
-    Text or unsigned 32-bit integer (T/I) ? T
+    Choose Field Type (Text/u64/i64/f64/Date/Facet/Bytes) ? Text
     Should the field be stored (Y/N) ? Y
     Should the field be indexed (Y/N) ? N
     Add another field (Y/N) ? N
+
 
     [
     {
@@ -152,7 +151,7 @@ The structure of this JSON object must match that of our schema definition.
 ```
 
 For this tutorial, you can download a corpus with the 5 million+ English Wikipedia articles in the right format here: [wiki-articles.json (2.34 GB)](https://www.dropbox.com/s/wwnfnu441w1ec9p/wiki-articles.json.bz2?dl=0).
-Make sure to decompress the file
+Make sure to decompress the file. Also, you can avoid this if you have `bzcat` installed so that you can read it compressed.
 
 ```bash
     bunzip2 wiki-articles.json.bz2
