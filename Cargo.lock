@@ -1524,7 +1524,7 @@ dependencies = [
 
 [[package]]
 name = "tantivy-cli"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chan 0.1.23 (registry+https://github.com/rust-lang/crates.io-index)",
