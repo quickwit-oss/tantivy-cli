@@ -13,7 +13,7 @@
 ///     http://localhost:3000/api/?q=fulmicoton&nhits=20
 ///
 use crate::timer::TimerTree;
-use clap::ArgMatches;
+use clap::{value_t, ArgMatches};
 use iron::mime::Mime;
 use iron::prelude::*;
 use iron::status;
@@ -43,7 +43,7 @@ use urlencoded::UrlEncodedQuery;
 
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
-    let port = matches.value_of_t("port").unwrap_or(3000u16);
+    let port = value_t!(matches, "port", u16).unwrap_or(3000u16);
     let host_str = matches.value_of("host").unwrap_or("localhost");
     let host = format!("{}:{}", host_str, port);
     run_serve(index_directory, &host).map_err(|e| format!("{:?}", e))
@@ -111,7 +111,10 @@ impl IndexServer {
         let mut timer_tree = TimerTree::default();
         let (top_docs, num_hits) = {
             let _search_timer = timer_tree.open("search");
-            searcher.search(&query, &(TopDocs::with_limit(num_hits).and_offset(offset), Count))?
+            searcher.search(
+                &query,
+                &(TopDocs::with_limit(num_hits).and_offset(offset), Count),
+            )?
         };
         let hits: Vec<Hit> = {
             let _fetching_timer = timer_tree.open("fetching docs");

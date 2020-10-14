@@ -44,11 +44,7 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
             let doc_id = scorer.doc();
             let doc = store_reader.get(doc_id)?;
             let named_doc = schema.to_named_doc(&doc);
-            if let Err(e) = writeln!(
-                stdout,
-                "{}",
-                serde_json::to_string(&named_doc).unwrap()
-            ) {
+            if let Err(e) = writeln!(stdout, "{}", serde_json::to_string(&named_doc).unwrap()) {
                 if e.kind() != ErrorKind::BrokenPipe {
                     eprintln!("{}", e.to_string());
                     process::exit(1)
@@ -62,4 +58,3 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
 
     Ok(())
 }
-

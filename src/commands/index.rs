@@ -1,4 +1,5 @@
 use chan;
+use clap::value_t;
 use clap::ArgMatches;
 use std::cmp;
 use std::convert::From;
@@ -23,14 +24,12 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
         .map(|path| DocumentSource::FromFile(PathBuf::from(path)))
         .unwrap_or(DocumentSource::FromPipe);
     let no_merge = argmatch.is_present("nomerge");
-    let mut num_threads = argmatch
-        .value_of_t("num_threads")
+    let mut num_threads = value_t!(argmatch, "num_threads", usize)
         .map_err(|_| format!("Failed to read num_threads argument as an integer."))?;
     if num_threads == 0 {
         num_threads = 1;
     }
-    let buffer_size: usize = argmatch
-        .value_of_t("memory_size")
+    let buffer_size: usize = value_t!(argmatch, "memory_size", usize)
         .map_err(|_| format!("Failed to read the buffer size argument as an integer."))?;
     let buffer_size_per_thread = buffer_size / num_threads;
     run_index(
