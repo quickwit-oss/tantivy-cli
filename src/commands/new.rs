@@ -165,6 +165,19 @@ fn ask_add_num_field_with_options(
     }
 }
 
+fn ask_add_field_bytes(field_name: &str, schema_builder: &mut SchemaBuilder) {
+    let mut bytes_options = BytesOptions::default();
+    if prompt_yn("Should the field be stored") {
+        bytes_options = bytes_options.set_stored();
+    }
+
+    if prompt_yn("Should the field be indexed") {
+        bytes_options = bytes_options.set_indexed();
+    }
+
+    schema_builder.add_bytes_field(field_name, bytes_options);
+}
+
 fn ask_add_field(schema_builder: &mut SchemaBuilder) {
     println!("\n\n");
     let field_name = prompt_input("New field name ", field_name_validate);
@@ -185,7 +198,7 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
             schema_builder.add_facet_field(&field_name);
         }
         Type::Bytes => {
-            schema_builder.add_bytes_field(&field_name);
+            ask_add_field_bytes(&field_name, schema_builder);
         }
         Type::F64 => {
             unimplemented!();
