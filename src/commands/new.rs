@@ -87,7 +87,7 @@ fn prompt_field_type(msg: &str, codes: Vec<&str>) -> tantivy::schema::Type {
         "TEXT" => Type::Str,
         "U64" => Type::U64,
         "I64" => Type::I64,
-        // "F64" => Type::F64,
+        "F64" => Type::F64,
         "DATE" => Type::Date,
         "FACET" => Type::HierarchicalFacet,
         "BYTES" => Type::Bytes,
@@ -149,9 +149,9 @@ fn ask_add_num_field_with_options(
         Type::U64 => {
             schema_builder.add_u64_field(field_name, int_options);
         }
-        // Type::F64 => {
-        //     schema_builder.add_f64_field(field_name, int_options);
-        // }
+        Type::F64 => {
+            schema_builder.add_f64_field(field_name, int_options);
+        }
         Type::I64 => {
             schema_builder.add_i64_field(field_name, int_options);
         }
@@ -190,8 +190,7 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
         Type::Str => {
             ask_add_field_text(&field_name, schema_builder);
         }
-        Type::U64 | Type::Date | Type::I64 => {
-            // Type::U64 | Type::F64 | Type::Date | Type::I64 => {
+        Type::U64 | Type::F64 | Type::Date | Type::I64 => {
             ask_add_num_field_with_options(&field_name, field_type, schema_builder);
         }
         Type::HierarchicalFacet => {
@@ -199,9 +198,6 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
         }
         Type::Bytes => {
             ask_add_field_bytes(&field_name, schema_builder);
-        }
-        Type::F64 => {
-            unimplemented!();
         }
     }
 }
