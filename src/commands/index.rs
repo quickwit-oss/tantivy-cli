@@ -131,18 +131,18 @@ fn index_documents(
 ) -> tantivy::Result<u64> {
     let group_count = 100_000;
     let mut num_docs = 0;
-    let mut cur = Instant::now();
+    let cur = Instant::now();
     for doc in doc_receiver {
         index_writer.add_document(doc);
         if num_docs > 0 && (num_docs % group_count == 0) {
             println!("{} Docs", num_docs);
             let new = Instant::now();
-            let elapsed = cur - new;
+            let elapsed = new - cur;
             println!(
-                "{:?} docs / hour",
-                group_count * 3600 * 1_000_000 as u64 / (elapsed.whole_microseconds() as u64)
+                "{:.0} docs / hour",
+                num_docs as f32 * 3600.0 * 1_000_000.0 as f32
+                    / (elapsed.whole_microseconds() as f32)
             );
-            cur = new;
         }
         num_docs += 1;
     }
