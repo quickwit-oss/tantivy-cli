@@ -230,3 +230,12 @@ The documents are returned in an unspecified order.
     tantivy search -i wikipedia-index -q "barack obama"
 ```
 
+
+# Benchmark the index: `bench`
+
+Tantivy's cli provides a simple benchmark tool.
+You can run it with the following command.
+
+```
+    tantivy bench -i wikipedia-index -n 10 -q queries.txt
+```
