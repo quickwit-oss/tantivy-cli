@@ -77,6 +77,12 @@ fn main() {
                     .value_name("query")
                     .help("Query")
                     .required(true))
+                .arg(Arg::with_name("fields")
+                    .short("f")
+                    .long("fields")
+                    .value_name("fields")
+                    .help("Fields to print")
+                    .required(false))
         )
         .subcommand(
             App::new("bench")
