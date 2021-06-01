@@ -65,69 +65,70 @@ parameter as follows:
 Answer the questions as follows:
 
 ```none
-
-    Creating new index 
-    Let's define its schema! 
-
+Creating new index
+First define its schema!
 
 
-    New field name  ? title
-    Choose Field Type (Text/u64/i64/f64/Date/Facet/Bytes) ? Text
-    Should the field be stored (Y/N) ? Y
-    Should the field be indexed (Y/N) ? Y
-    Should the term be tokenized? (Y/N) ? Y
-    Should the term frequencies (per doc) be in the index (Y/N) ? Y
-    Should the term positions (per doc) be in the index (Y/N) ? Y
-    Add another field (Y/N) ? Y
-    
-    
-    
-    New field name  ? body
-    Choose Field Type (Text/u64/i64/f64/Date/Facet/Bytes) ? Text
-    Should the field be stored (Y/N) ? Y
-    Should the field be indexed (Y/N) ? Y
-    Should the term be tokenized? (Y/N) ? Y
-    Should the term frequencies (per doc) be in the index (Y/N) ? Y
-    Should the term positions (per doc) be in the index (Y/N) ? Y
-    Add another field (Y/N) ? Y
-    
-    
-    
-    New field name  ? url
-    Choose Field Type (Text/u64/i64/f64/Date/Facet/Bytes) ? Text
-    Should the field be stored (Y/N) ? Y
-    Should the field be indexed (Y/N) ? N
-    Add another field (Y/N) ? N
+
+New field name  ? title
+Choose Field Type (Text/u64/i64/f64/Date/Facet/Bytes) ? Text
+Should the field be stored (Y/N) ? y
+Should the field be indexed (Y/N) ? y
+Should the term be tokenized? (Y/N) ? y
+Should the term frequencies (per doc) be in the index (Y/N) ? n
+Add another field (Y/N) ? y
 
 
-    [
-    {
-        "name": "title",
-        "type": "text",
-        "options": {
-            "indexing": "position",
-            "stored": true
-        }
-    },
-    {
-        "name": "body",
-        "type": "text",
-        "options": {
-            "indexing": "position",
-            "stored": true
-        }
-    },
-    {
-        "name": "url",
-        "type": "text",
-        "options": {
-            "indexing": "unindexed",
-            "stored": true
-        }
+
+New field name  ? body
+Choose Field Type (Text/u64/i64/f64/Date/Facet/Bytes) ? Text
+Should the field be stored (Y/N) ? y
+Should the field be indexed (Y/N) ? y
+Should the term be tokenized? (Y/N) ? y
+Should the term frequencies (per doc) be in the index (Y/N) ? y
+Should the term positions (per doc) be in the index (Y/N) ? y
+Add another field (Y/N) ? y
+
+
+
+New field name  ? url
+Choose Field Type (Text/u64/i64/f64/Date/Facet/Bytes) ? Text
+Should the field be stored (Y/N) ? y
+Should the field be indexed (Y/N) ? n
+Add another field (Y/N) ? n
+
+[
+  {
+    "name": "title",
+    "type": "text",
+    "options": {
+      "indexing": {
+        "record": "basic",
+        "tokenizer": "en_stem"
+      },
+      "stored": true
     }
-    ]
-
-
+  },
+  {
+    "name": "body",
+    "type": "text",
+    "options": {
+      "indexing": {
+        "record": "position",
+        "tokenizer": "en_stem"
+      },
+      "stored": true
+    }
+  },
+  {
+    "name": "url",
+    "type": "text",
+    "options": {
+      "indexing": null,
+      "stored": true
+    }
+  }
+]
 ```
 
 After the wizard has finished, a `meta.json` should exist in `wikipedia-index/meta.json`.
