@@ -39,8 +39,8 @@ fn read_query_file(query_path: &Path) -> io::Result<Vec<String>> {
 }
 
 fn run_bench(index_path: &Path, query_filepath: &Path, num_repeat: usize) -> Result<(), String> {
-    println!("index_path : {:?}", index_path);
-    println!("Query : {:?}", index_path);
+    println!("Index : {:?}", index_path);
+    println!("Query : {:?}", query_filepath);
     println!("-------------------------------\n\n\n");
 
     let index =
@@ -60,8 +60,8 @@ fn run_bench(index_path: &Path, query_filepath: &Path, num_repeat: usize) -> Res
 
     println!("SEARCH\n");
     println!(
-        "{}\t{}\t{}\t{}",
-        "query", "num_terms", "num hits", "time in microsecs"
+        "{}\t{}\t{}",
+        "query", "num hits", "time in microsecs"
     );
     for _ in 0..num_repeat {
         for query_txt in &queries {
