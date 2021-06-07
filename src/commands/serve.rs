@@ -98,7 +98,7 @@ impl IndexServer {
         Hit {
             score,
             doc: self.schema.to_named_doc(&doc),
-            id: doc_address.doc(),
+            id: doc_address.doc_id,
         }
     }
 

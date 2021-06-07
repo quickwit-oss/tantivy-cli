@@ -59,10 +59,7 @@ fn run_bench(index_path: &Path, query_filepath: &Path, num_repeat: usize) -> Res
     );
 
     println!("SEARCH\n");
-    println!(
-        "{}\t{}\t{}",
-        "query", "num hits", "time in microsecs"
-    );
+    println!("{}\t{}\t{}", "query", "num hits", "time in microsecs");
     for _ in 0..num_repeat {
         for query_txt in &queries {
             let query = query_parser.parse_query(&query_txt).unwrap();

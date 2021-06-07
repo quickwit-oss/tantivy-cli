@@ -194,7 +194,7 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
             ask_add_num_field_with_options(&field_name, field_type, schema_builder);
         }
         Type::HierarchicalFacet => {
-            schema_builder.add_facet_field(&field_name);
+            schema_builder.add_facet_field(&field_name, tantivy::schema::INDEXED);
         }
         Type::Bytes => {
             ask_add_field_bytes(&field_name, schema_builder);
