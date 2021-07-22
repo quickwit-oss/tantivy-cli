@@ -13,4 +13,5 @@ RUN cargo install --target x86_64-unknown-linux-musl --path .
 FROM scratch
 COPY --from=builder /usr/local/cargo/bin/tantivy .
 USER 1000
+EXPOSE 3000
 ENTRYPOINT ["./tantivy"]

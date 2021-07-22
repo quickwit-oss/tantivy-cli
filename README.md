@@ -239,3 +239,41 @@ You can run it with the following command.
 ```
     tantivy bench -i wikipedia-index -n 10 -q queries.txt
 ```
+
+# Docker build
+
+you can build locally docker image
+
+```
+    docker build -t tantivy-cli .
+```
+
+use help 
+
+```
+    docker run --rm -ti tantivy-cli --help
+```
+
+let's create a directory in wich your index will ve stored
+
+```
+    mkdir wikipedia-index
+```
+
+create new index index
+
+```
+    docker run --rm -ti -v wikipedia-index:/wikipedia-index tantivy-cli new -i wikipedia-index
+```
+
+fill index 
+
+```
+    curl https://fulmicoton.com/tantivy-files/wiki-articles-1000.json | docker run --rm -ti -v wikipedia-index:/wikipedia-index tantivy-cli index -i ./wikipedia-index
+```
+
+serve
+
+```
+    docker run --name tantivy-serve -d -v wikipedia-index:/wikipedia-index -p 3000:3000 tantivy-cli serve -i ./wikiepdia-index --host 0.0.0.0
+```
