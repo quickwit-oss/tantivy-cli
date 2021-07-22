@@ -1,4 +1,4 @@
-FROM rust:1.40.0 as builder
+FROM rust:1.53.0 as builder
 WORKDIR /usr/src
 RUN rustup target add x86_64-unknown-linux-musl
 
@@ -8,10 +8,9 @@ COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release
 
 COPY src ./src
-COPY templates ./templates
 RUN cargo install --target x86_64-unknown-linux-musl --path .
 
 FROM scratch
-COPY --from=builder /usr/local/cargo/bin/tantivy-cli .
+COPY --from=builder /usr/local/cargo/bin/tantivy .
 USER 1000
-CMD ["tantivy"]
+ENTRYPOINT ["./tantivy"]
