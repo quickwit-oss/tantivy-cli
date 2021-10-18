@@ -4,9 +4,9 @@ version = "0.15.0"
 authors = ["Paul Masurel <paul.masurel@gmail.com>"]
 
 description = """Command line interface for Tantivy, a search engine library."""
-documentation = "https://github.com/tantivy-search/tantivy-cli"
-homepage = "https://github.com/tantivy-search/tantivy-cli"
-repository = "https://github.com/tantivy-search/tantivy-cli"
+documentation = "https://github.com/quickwit-inc/tantivy-cli"
+homepage = "https://github.com/quickwit-inc/tantivy-cli"
+repository = "https://github.com/quickwit-inc/tantivy-cli"
 
 readme = "README.md"
 keywords = ["search", "information", "retrieval"]

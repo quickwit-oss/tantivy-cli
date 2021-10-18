@@ -2,7 +2,7 @@
 ![beacon for google analytics](https://ga-beacon.appspot.com/UA-88834340-1/tantivy-cli/README)
 
 
-`tantivy-cli` is the project hosting the command line interface for [tantivy](https://github.com/tantivy-search/tantivy), a search engine project.
+`tantivy-cli` is the project hosting the command line interface for [tantivy](https://github.com/quickwit-inc/tantivy), a search engine project.
 
 
 # Tutorial: Indexing Wikipedia with Tantivy CLI
