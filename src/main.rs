@@ -79,6 +79,11 @@ fn main() {
                     .required(true))
         )
         .subcommand(
+            App::new("inspect")
+                .about("Inspect an index.")
+                .arg(index_arg.clone())
+        )
+        .subcommand(
             App::new("bench")
                 .about("Run a benchmark on your index")
                 .arg(index_arg.clone())
@@ -109,6 +114,7 @@ fn main() {
         "index" => run_index_cli,
         "serve" => run_serve_cli,
         "search" => run_search_cli,
+        "inspect" => run_inspect_cli,
         "merge" => run_merge_cli,
         "bench" => run_bench_cli,
         _ => panic!("Subcommand {} is unknown", subcommand),
