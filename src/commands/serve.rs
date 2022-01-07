@@ -13,7 +13,7 @@
 ///     http://localhost:3000/api/?q=fulmicoton&nhits=20
 ///
 use crate::timer::TimerTree;
-use clap::{value_t, ArgMatches};
+use clap::ArgMatches;
 use iron::mime::Mime;
 use iron::prelude::*;
 use iron::status;
@@ -21,14 +21,12 @@ use iron::typemap::Key;
 use mount::Mount;
 use persistent::Read;
 use serde_derive::Serialize;
-use serde_json;
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Debug};
 use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
-use tantivy;
 use tantivy::collector::{Count, TopDocs};
 use tantivy::query::QueryParser;
 use tantivy::schema::Field;
@@ -43,7 +41,7 @@ use urlencoded::UrlEncodedQuery;
 
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
-    let port = value_t!(matches, "port", u16).unwrap_or(3000u16);
+    let port = ArgMatches::value_of_t(matches, "port").unwrap_or(3000u16);
     let host_str = matches.value_of("host").unwrap_or("localhost");
     let host = format!("{}:{}", host_str, port);
     run_serve(index_directory, &host).map_err(|e| format!("{:?}", e))
