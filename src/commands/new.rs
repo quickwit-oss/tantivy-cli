@@ -1,13 +1,11 @@
 use ansi_term::Colour::{Blue, Green, Red};
 use ansi_term::Style;
 use clap::ArgMatches;
-use serde_json;
 use std::convert::From;
 use std::fs;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
-use tantivy;
 use tantivy::schema::Cardinality;
 use tantivy::schema::*;
 use tantivy::Index;

@@ -1,5 +1,3 @@
-use chan;
-use clap::value_t;
 use clap::ArgMatches;
 use std::cmp;
 use std::convert::From;
@@ -10,7 +8,6 @@ use std::io::BufReader;
 use std::io::Read;
 use std::path::PathBuf;
 use std::thread;
-use tantivy;
 use tantivy::merge_policy::NoMergePolicy;
 use tantivy::Document;
 use tantivy::Index;
@@ -24,12 +21,12 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
         .map(|path| DocumentSource::FromFile(PathBuf::from(path)))
         .unwrap_or(DocumentSource::FromPipe);
     let no_merge = argmatch.is_present("nomerge");
-    let mut num_threads = value_t!(argmatch, "num_threads", usize)
+    let mut num_threads = ArgMatches::value_of_t(argmatch, "num_threads")
         .map_err(|_| format!("Failed to read num_threads argument as an integer."))?;
     if num_threads == 0 {
         num_threads = 1;
     }
-    let buffer_size: usize = value_t!(argmatch, "memory_size", usize)
+    let buffer_size: usize = ArgMatches::value_of_t(argmatch, "memory_size")
         .map_err(|_| format!("Failed to read the buffer size argument as an integer."))?;
     let buffer_size_per_thread = buffer_size / num_threads;
     run_index(
