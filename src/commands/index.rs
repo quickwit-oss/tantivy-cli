@@ -130,7 +130,7 @@ fn index_documents(
     let mut num_docs = 0;
     let cur = Instant::now();
     for doc in doc_receiver {
-        index_writer.add_document(doc);
+        index_writer.add_document(doc)?;
         if num_docs > 0 && (num_docs % group_count == 0) {
             println!("{} Docs", num_docs);
             let new = Instant::now();

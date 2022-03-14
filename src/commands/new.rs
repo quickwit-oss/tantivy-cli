@@ -87,8 +87,9 @@ fn prompt_field_type(msg: &str, codes: Vec<&str>) -> tantivy::schema::Type {
         "I64" => Type::I64,
         "F64" => Type::F64,
         "DATE" => Type::Date,
-        "FACET" => Type::HierarchicalFacet,
+        "FACET" => Type::Facet,
         "BYTES" => Type::Bytes,
+        "JSON" => Type::Json,
         &_ => Type::Str, // shouldn't be here, the `predicate` fails before here
     }
 }
@@ -133,7 +134,7 @@ fn ask_add_num_field_with_options(
     field_type: Type,
     schema_builder: &mut SchemaBuilder,
 ) {
-    let mut int_options = IntOptions::default();
+    let mut int_options = NumericOptions::default();
     if prompt_yn("Should the field be stored") {
         int_options = int_options.set_stored();
     }
@@ -163,6 +164,21 @@ fn ask_add_num_field_with_options(
     }
 }
 
+fn ask_add_field_json(field_name: &str, schema_builder: &mut SchemaBuilder) {
+    let mut json_options = JsonObjectOptions::default();
+    if prompt_yn("Should the field be stored") {
+        let stored: JsonObjectOptions = STORED.into();
+        json_options = json_options | stored;
+    }
+
+    if prompt_yn("Should the field be indexed") {
+        let text: JsonObjectOptions = TEXT.into();
+        json_options = json_options | text;
+    }
+
+    schema_builder.add_json_field(field_name, json_options);
+}
+
 fn ask_add_field_bytes(field_name: &str, schema_builder: &mut SchemaBuilder) {
     let mut bytes_options = BytesOptions::default();
     if prompt_yn("Should the field be stored") {
@@ -182,7 +198,9 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
 
     // Manually iterate over tantivy::schema::Type and make strings out of them
     // Can introduce a dependency to do it automatically, but this should be easier
-    let possible_field_types = vec!["Text", "u64", "i64", "f64", "Date", "Facet", "Bytes"];
+    let possible_field_types = vec![
+        "Text", "u64", "i64", "f64", "Date", "Facet", "Bytes", "Json",
+    ];
     let field_type = prompt_field_type("Choose Field Type", possible_field_types);
     match field_type {
         Type::Str => {
@@ -191,11 +209,14 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
         Type::U64 | Type::F64 | Type::Date | Type::I64 => {
             ask_add_num_field_with_options(&field_name, field_type, schema_builder);
         }
-        Type::HierarchicalFacet => {
+        Type::Facet => {
             schema_builder.add_facet_field(&field_name, tantivy::schema::INDEXED);
         }
         Type::Bytes => {
             ask_add_field_bytes(&field_name, schema_builder);
+        }
+        Type::Json => {
+            ask_add_field_json(&field_name, schema_builder);
         }
     }
 }
