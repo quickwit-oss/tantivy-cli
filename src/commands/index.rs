@@ -67,10 +67,10 @@ fn run_index(
         let doc_sender_clone = doc_sender.clone();
         let line_receiver_clone = line_receiver.clone();
         thread::spawn(move || {
-            for article_line in line_receiver_clone {
-                match schema_clone.parse_document(&article_line) {
+            for doc_str in line_receiver_clone {
+                match schema_clone.parse_document(&doc_str) {
                     Ok(doc) => {
-                        doc_sender_clone.send(doc);
+                        doc_sender_clone.send((doc, doc_str.len()));
                     }
                     Err(err) => {
                         println!("Failed to add document doc {:?}", err);
@@ -124,24 +124,36 @@ fn run_index(
 
 fn index_documents(
     index_writer: &mut IndexWriter,
-    doc_receiver: chan::Receiver<Document>,
+    doc_receiver: chan::Receiver<(Document, usize)>,
 ) -> tantivy::Result<u64> {
-    let group_count = 100_000;
+    let mut num_docs_total = 0;
     let mut num_docs = 0;
-    let cur = Instant::now();
-    for doc in doc_receiver {
+    let mut num_docs_byte = 0;
+    let mut last_print = Instant::now();
+    for (doc, doc_size) in doc_receiver {
         index_writer.add_document(doc)?;
-        if num_docs > 0 && (num_docs % group_count == 0) {
-            println!("{} Docs", num_docs);
-            let new = Instant::now();
-            let elapsed = new - cur;
-            println!(
-                "{:.0} docs / hour",
-                num_docs as f32 * 3600.0 * 1_000_000.0 as f32
-                    / (elapsed.whole_microseconds() as f32)
-            );
-        }
+
+        let new = Instant::now();
+        let elapsed_since_last_print = new - last_print;
+
+        num_docs_total += 1;
         num_docs += 1;
+        num_docs_byte += doc_size;
+
+        if elapsed_since_last_print.as_seconds_f32() > 1.0 {
+            println!("{} Docs", num_docs_total);
+            let doc_mb = num_docs_byte as f32 / 1_000_000 as f32;
+            let through_put = doc_mb as f32 / elapsed_since_last_print.as_seconds_f32();
+            println!(
+                "{:.0} docs / hour {:.2} Mb/s",
+                num_docs as f32 * 3600.0 * 1_000_000.0 as f32
+                    / (elapsed_since_last_print.whole_microseconds() as f32),
+                through_put
+            );
+            last_print = new;
+            num_docs_byte = 0;
+            num_docs = 0;
+        }
     }
     index_writer.commit()
 }
