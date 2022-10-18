@@ -39,7 +39,7 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
 
     for segment_reader in searcher.segment_readers() {
         let mut scorer = weight.scorer(segment_reader, 1.0)?;
-        let store_reader = segment_reader.get_store_reader()?;
+        let store_reader = segment_reader.get_store_reader(10)?;
         while scorer.doc() != TERMINATED {
             let doc_id = scorer.doc();
             let doc = store_reader.get(doc_id)?;
