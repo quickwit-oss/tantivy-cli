@@ -1,9 +1,16 @@
+[![Docs](https://docs.rs/tantivy/badge.svg)](https://docs.rs/crate/tantivy-cli/)
+[![Join the chat at https://discord.gg/MT27AG5EVE](https://shields.io/discord/908281611840282624?label=chat%20on%20discord)](https://discord.gg/MT27AG5EVE)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![beacon for google analytics](https://ga-beacon.appspot.com/UA-88834340-1/tantivy-cli/README)
+[![Crates.io](https://img.shields.io/crates/v/tantivy.svg)](https://crates.io/crates/tantivy-cli)
 
 
-`tantivy-cli` is the project hosting the command line interface for [tantivy](https://github.com/quickwit-inc/tantivy), a search engine project.
+# tantivy-cli
 
+`tantivy-cli` is the the command line interface for [tantivy](https://github.com/quickwit-inc/tantivy) search engine. It provides basic indexing and search capabilities.
+
+For a more complete solution around tantivy, you may use
+- https://github.com/quickwit-oss/quickwit
+- https://github.com/lnx-search/lnx
 
 # Tutorial: Indexing Wikipedia with Tantivy CLI
 
