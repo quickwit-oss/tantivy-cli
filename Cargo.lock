@@ -1245,7 +1245,7 @@ checksum = "e71a0c95b82d4292b097a09b989a6380d28c3a86800c841a2d03bae1fc8b9fa6"
 
 [[package]]
 name = "tantivy-cli"
-version = "0.18.0"
+version = "0.19.0"
 dependencies = [
  "ansi_term",
  "chan",
