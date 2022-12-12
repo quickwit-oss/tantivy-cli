@@ -27,7 +27,6 @@ urlencoded = "0.6"
 mount = "0.4"
 chan = "0.1"
 log = "0.4"
-futures = "0.3"
 env_logger = "0.9"
 tantivy = "0.19.0"
 
