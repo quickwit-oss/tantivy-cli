@@ -105,6 +105,9 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
     if prompt_yn("Should the field be stored") {
         text_options = text_options.set_stored();
     }
+    if prompt_yn("Should the field be fast") {
+        text_options = text_options.set_fast();
+    }
 
     if prompt_yn("Should the field be indexed") {
         let mut text_indexing_options = TextFieldIndexing::default()
@@ -194,6 +197,23 @@ fn ask_add_field_bytes(field_name: &str, schema_builder: &mut SchemaBuilder) {
     schema_builder.add_bytes_field(field_name, bytes_options);
 }
 
+fn ask_add_field_date(field_name: &str, schema_builder: &mut SchemaBuilder) {
+    let mut date_options = DateOptions::default();
+    if prompt_yn("Should the field be stored") {
+        date_options = date_options.set_stored();
+    }
+
+    if prompt_yn("Should the field be fast") {
+        date_options = date_options.set_fast(Cardinality::SingleValue);
+    }
+
+    if prompt_yn("Should the field be indexed") {
+        date_options = date_options.set_indexed();
+    }
+
+    schema_builder.add_date_field(field_name, date_options);
+}
+
 fn ask_add_field_ip(field_name: &str, schema_builder: &mut SchemaBuilder) {
     let mut ip_addr_options = IpAddrOptions::default();
     if prompt_yn("Should the field be stored") {
@@ -229,7 +249,7 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
             ask_add_num_field_with_options(&field_name, field_type, schema_builder);
         }
         Type::Date => {
-            schema_builder.add_date_field(&field_name, DateOptions::default());
+            ask_add_field_date(&field_name, schema_builder);
         }
         Type::Facet => {
             schema_builder.add_facet_field(&field_name, tantivy::schema::INDEXED);
