@@ -83,6 +83,7 @@ fn prompt_field_type(msg: &str, codes: Vec<&str>) -> tantivy::schema::Type {
     let prompt_output = prompt_input(&message, predicate);
     match prompt_output.to_ascii_uppercase().as_ref() {
         "TEXT" => Type::Str,
+        "BOOL" => Type::Bool,
         "U64" => Type::U64,
         "I64" => Type::I64,
         "F64" => Type::F64,
@@ -90,6 +91,7 @@ fn prompt_field_type(msg: &str, codes: Vec<&str>) -> tantivy::schema::Type {
         "FACET" => Type::Facet,
         "BYTES" => Type::Bytes,
         "JSON" => Type::Json,
+        "IPADDR" => Type::IpAddr,
         &_ => Type::Str, // shouldn't be here, the `predicate` fails before here
     }
 }
@@ -154,8 +156,8 @@ fn ask_add_num_field_with_options(
         Type::I64 => {
             schema_builder.add_i64_field(field_name, int_options);
         }
-        Type::Date => {
-            schema_builder.add_date_field(field_name, int_options);
+        Type::Bool => {
+            schema_builder.add_bool_field(&field_name, int_options);
         }
         _ => {
             // We only pass to this function if the field type is numeric
@@ -192,6 +194,23 @@ fn ask_add_field_bytes(field_name: &str, schema_builder: &mut SchemaBuilder) {
     schema_builder.add_bytes_field(field_name, bytes_options);
 }
 
+fn ask_add_field_ip(field_name: &str, schema_builder: &mut SchemaBuilder) {
+    let mut ip_addr_options = IpAddrOptions::default();
+    if prompt_yn("Should the field be stored") {
+        ip_addr_options = ip_addr_options.set_stored();
+    }
+
+    if prompt_yn("Should the field be fast") {
+        ip_addr_options = ip_addr_options.set_fast(Cardinality::SingleValue);
+    }
+
+    if prompt_yn("Should the field be indexed") {
+        ip_addr_options = ip_addr_options.set_indexed();
+    }
+
+    schema_builder.add_ip_addr_field(field_name, ip_addr_options);
+}
+
 fn ask_add_field(schema_builder: &mut SchemaBuilder) {
     println!("\n\n");
     let field_name = prompt_input("New field name ", field_name_validate);
@@ -199,15 +218,18 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
     // Manually iterate over tantivy::schema::Type and make strings out of them
     // Can introduce a dependency to do it automatically, but this should be easier
     let possible_field_types = vec![
-        "Text", "u64", "i64", "f64", "Date", "Facet", "Bytes", "Json",
+        "Text", "u64", "i64", "f64", "Date", "Facet", "Bytes", "Json", "bool", "IpAddr",
     ];
     let field_type = prompt_field_type("Choose Field Type", possible_field_types);
     match field_type {
         Type::Str => {
             ask_add_field_text(&field_name, schema_builder);
         }
-        Type::U64 | Type::F64 | Type::Date | Type::I64 => {
+        Type::U64 | Type::F64 | Type::I64 | Type::Bool => {
             ask_add_num_field_with_options(&field_name, field_type, schema_builder);
+        }
+        Type::Date => {
+            schema_builder.add_date_field(&field_name, DateOptions::default());
         }
         Type::Facet => {
             schema_builder.add_facet_field(&field_name, tantivy::schema::INDEXED);
@@ -217,6 +239,9 @@ fn ask_add_field(schema_builder: &mut SchemaBuilder) {
         }
         Type::Json => {
             ask_add_field_json(&field_name, schema_builder);
+        }
+        Type::IpAddr => {
+            ask_add_field_ip(&field_name, schema_builder);
         }
     }
 }
