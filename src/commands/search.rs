@@ -6,7 +6,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 use tantivy;
-use tantivy::query::QueryParser;
+use tantivy::query::{EnableScoring, QueryParser};
 use tantivy::schema::Field;
 use tantivy::schema::FieldType;
 use tantivy::{Index, TERMINATED};
@@ -33,13 +33,13 @@ fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
     let query_parser = QueryParser::new(schema.clone(), default_fields, index.tokenizers().clone());
     let query = query_parser.parse_query(query)?;
     let searcher = index.reader()?.searcher();
-    let weight = query.weight(&searcher, false)?;
+    let weight = query.weight(EnableScoring::Enabled(&searcher))?;
 
     let mut stdout = io::BufWriter::new(io::stdout());
 
     for segment_reader in searcher.segment_readers() {
         let mut scorer = weight.scorer(segment_reader, 1.0)?;
-        let store_reader = segment_reader.get_store_reader()?;
+        let store_reader = segment_reader.get_store_reader(100)?;
         while scorer.doc() != TERMINATED {
             let doc_id = scorer.doc();
             let doc = store_reader.get(doc_id)?;
