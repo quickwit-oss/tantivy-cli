@@ -6,7 +6,7 @@
 
 # tantivy-cli
 
-`tantivy-cli` is the the command line interface for [tantivy](https://github.com/quickwit-inc/tantivy) search engine. It provides basic indexing and search capabilities.
+`tantivy-cli` is the the command line interface for the [tantivy](https://github.com/quickwit-inc/tantivy) search engine. It provides indexing and search capabilities, and is suitable for smaller projects.
 
 For a more complete solution around tantivy, you may use
 - https://github.com/quickwit-oss/quickwit
