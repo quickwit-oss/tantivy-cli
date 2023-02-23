@@ -14,6 +14,8 @@ use tantivy::Index;
 use tantivy::IndexWriter;
 use time::Instant;
 
+use crate::commands::merge::run_merge;
+
 pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(argmatch.value_of("index").unwrap());
     let document_source = argmatch
@@ -21,6 +23,7 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
         .map(|path| DocumentSource::FromFile(PathBuf::from(path)))
         .unwrap_or(DocumentSource::FromPipe);
     let no_merge = argmatch.is_present("nomerge");
+    let force_merge = argmatch.is_present("forcemerge");
     let mut num_threads = ArgMatches::value_of_t(argmatch, "num_threads")
         .map_err(|_| format!("Failed to read num_threads argument as an integer."))?;
     if num_threads == 0 {
@@ -35,6 +38,7 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
         buffer_size_per_thread,
         num_threads,
         no_merge,
+        force_merge,
     )
     .map_err(|e| format!("Indexing failed : {:?}", e))
 }
@@ -46,11 +50,12 @@ fn run_index(
     buffer_size_per_thread: usize,
     num_threads: usize,
     no_merge: bool,
+    force_merge: bool,
 ) -> tantivy::Result<()> {
     let index = Index::open_in_dir(&directory)?;
     let schema = index.schema();
-    let (line_sender, line_receiver) = chan::sync(10_000);
-    let (doc_sender, doc_receiver) = chan::sync(10_000);
+    let (line_sender, line_receiver) = chan::sync(100);
+    let (doc_sender, doc_receiver) = chan::sync(100);
 
     thread::spawn(move || {
         let articles = document_source.read().unwrap();
@@ -99,10 +104,29 @@ fn run_index(
     }
 
     match index_result {
-        Ok(docstamp) => {
-            println!("Commit succeed, docstamp at {}", docstamp);
+        Ok(res) => {
+            println!("Commit succeed, docstamp at {}", res.docstamp);
             println!("Waiting for merging threads");
+
+            let elapsed_before_merge = Instant::now() - start_overall;
+
+            let doc_mb = res.num_docs_byte as f32 / 1_000_000 as f32;
+            let through_put = doc_mb as f32 / elapsed_before_merge.as_seconds_f32();
+            println!("Total Nowait Merge: {:.2} Mb/s", through_put);
+
             index_writer.wait_merging_threads()?;
+
+            if force_merge {
+                println!("force_merge");
+                run_merge(directory)?;
+            }
+
+            let elapsed_after_merge = Instant::now() - start_overall;
+
+            let doc_mb = res.num_docs_byte as f32 / 1_000_000 as f32;
+            let through_put = doc_mb as f32 / elapsed_after_merge.as_seconds_f32();
+            println!("Total Wait Merge: {:.2} Mb/s", through_put);
+
             println!("Terminated successfully!");
             {
                 let duration = start_overall - Instant::now();
@@ -122,13 +146,20 @@ fn run_index(
     }
 }
 
+struct IndexResult {
+    docstamp: u64,
+    num_docs_byte: usize,
+}
+
 fn index_documents(
     index_writer: &mut IndexWriter,
     doc_receiver: chan::Receiver<(Document, usize)>,
-) -> tantivy::Result<u64> {
+) -> tantivy::Result<IndexResult> {
     let mut num_docs_total = 0;
     let mut num_docs = 0;
     let mut num_docs_byte = 0;
+    let mut num_docs_byte_total = 0;
+
     let mut last_print = Instant::now();
     for (doc, doc_size) in doc_receiver {
         index_writer.add_document(doc)?;
@@ -139,6 +170,7 @@ fn index_documents(
         num_docs_total += 1;
         num_docs += 1;
         num_docs_byte += doc_size;
+        num_docs_byte_total += doc_size;
 
         if elapsed_since_last_print.as_seconds_f32() > 1.0 {
             println!("{} Docs", num_docs_total);
@@ -155,7 +187,12 @@ fn index_documents(
             num_docs = 0;
         }
     }
-    index_writer.commit()
+    let res = index_writer.commit()?;
+
+    Ok(IndexResult {
+        docstamp: res,
+        num_docs_byte: num_docs_byte_total,
+    })
 }
 
 enum DocumentSource {

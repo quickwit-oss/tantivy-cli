@@ -63,6 +63,10 @@ fn main() {
                     .value_name("memory_size")
                     .help("Total memory_size in bytes. It will be split for the different threads.")
                     .default_value("1000000000"))
+                .arg(Arg::new("forcemerge")
+                    .long("forcemerge")
+                    .help("Merge all the segments at the end of indexing"))
+
                 .arg(Arg::new("nomerge")
                     .long("nomerge")
                     .help("Do not merge segments"))
