@@ -54,14 +54,14 @@ fn run_index(
 ) -> tantivy::Result<()> {
     let index = Index::open_in_dir(&directory)?;
     let schema = index.schema();
-    let (line_sender, line_receiver) = chan::sync(100);
-    let (doc_sender, doc_receiver) = chan::sync(100);
+    let (line_sender, line_receiver) = crossbeam_channel::bounded(100);
+    let (doc_sender, doc_receiver) = crossbeam_channel::bounded(100);
 
     thread::spawn(move || {
         let articles = document_source.read().unwrap();
         for article_line_res in articles.lines() {
             let article_line = article_line_res.unwrap();
-            line_sender.send(article_line);
+            line_sender.send(article_line).unwrap();
         }
     });
 
@@ -75,7 +75,7 @@ fn run_index(
             for doc_str in line_receiver_clone {
                 match schema_clone.parse_document(&doc_str) {
                     Ok(doc) => {
-                        doc_sender_clone.send((doc, doc_str.len()));
+                        doc_sender_clone.send((doc, doc_str.len())).unwrap();
                     }
                     Err(err) => {
                         println!("Failed to add document doc {:?}", err);
@@ -153,7 +153,7 @@ struct IndexResult {
 
 fn index_documents(
     index_writer: &mut IndexWriter,
-    doc_receiver: chan::Receiver<(Document, usize)>,
+    doc_receiver: crossbeam_channel::Receiver<(Document, usize)>,
 ) -> tantivy::Result<IndexResult> {
     let mut num_docs_total = 0;
     let mut num_docs = 0;
