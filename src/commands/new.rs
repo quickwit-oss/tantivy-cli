@@ -6,7 +6,6 @@ use std::fs;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
-use tantivy::schema::Cardinality;
 use tantivy::schema::*;
 use tantivy::Index;
 
@@ -106,7 +105,7 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
         text_options = text_options.set_stored();
     }
     if prompt_yn("Should the field be fast") {
-        text_options = text_options.set_fast();
+        text_options = text_options.set_fast(None);
     }
 
     if prompt_yn("Should the field be indexed") {
@@ -144,7 +143,7 @@ fn ask_add_num_field_with_options(
         int_options = int_options.set_stored();
     }
     if prompt_yn("Should the field be fast") {
-        int_options = int_options.set_fast(Cardinality::SingleValue);
+        int_options = int_options.set_fast();
     }
     if prompt_yn("Should the field be indexed") {
         int_options = int_options.set_indexed();
@@ -204,7 +203,7 @@ fn ask_add_field_date(field_name: &str, schema_builder: &mut SchemaBuilder) {
     }
 
     if prompt_yn("Should the field be fast") {
-        date_options = date_options.set_fast(Cardinality::SingleValue);
+        date_options = date_options.set_fast();
     }
 
     if prompt_yn("Should the field be indexed") {
@@ -221,7 +220,7 @@ fn ask_add_field_ip(field_name: &str, schema_builder: &mut SchemaBuilder) {
     }
 
     if prompt_yn("Should the field be fast") {
-        ip_addr_options = ip_addr_options.set_fast(Cardinality::SingleValue);
+        ip_addr_options = ip_addr_options.set_fast();
     }
 
     if prompt_yn("Should the field be indexed") {

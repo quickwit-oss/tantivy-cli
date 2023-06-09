@@ -81,6 +81,12 @@ fn main() {
                     .value_name("query")
                     .help("Query")
                     .required(true))
+                .arg(Arg::new("aggregation")
+                    .short('a')
+                    .long("agg")
+                    .value_name("agg")
+                    .help("Aggregation request as JSON")
+                    .required(false))
         )
         .subcommand(
             App::new("inspect")

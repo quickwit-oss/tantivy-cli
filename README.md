@@ -235,6 +235,7 @@ The documents are returned in an unspecified order.
 
 ```
     tantivy search -i wikipedia-index -q "barack obama"
+    tantivy search -i hdfs --query "*" --agg '{"severities":{"terms":{"field":"severity_text"}}}'
 ```
 
 
