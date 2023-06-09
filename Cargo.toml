@@ -1,6 +1,6 @@
 [package]
 name = "tantivy-cli"
-version = "0.19.0"
+version = "0.20.0"
 authors = ["Paul Masurel <paul.masurel@gmail.com>"]
 
 description = """Command line interface for Tantivy, a search engine library."""
@@ -11,7 +11,7 @@ repository = "https://github.com/quickwit-inc/tantivy-cli"
 readme = "README.md"
 keywords = ["search", "information", "retrieval"]
 license = "MIT"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 time = "0.3"
