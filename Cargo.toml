@@ -25,10 +25,10 @@ clap = "3"
 ansi_term = "0.12"
 urlencoded = "0.6"
 mount = "0.4"
-chan = "0.1"
 log = "0.4"
 env_logger = "0.9"
 tantivy = "0.20.0"
+crossbeam-channel = "0.5.8"
 
 [[bin]]
 name = "tantivy"
@@ -39,4 +39,3 @@ path = "src/main.rs"
 opt-level = 3
 debug = true
 debug-assertions = false
-lto = true
