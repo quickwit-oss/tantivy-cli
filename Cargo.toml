@@ -27,7 +27,7 @@ urlencoded = "0.6"
 mount = "0.4"
 log = "0.4"
 env_logger = "0.9"
-tantivy = "0.20.0"
+tantivy = "0.20.2"
 crossbeam-channel = "0.5.8"
 
 [[bin]]
