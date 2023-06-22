@@ -17,7 +17,7 @@ use tantivy::{Index, TERMINATED};
 pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
     let query = matches.value_of("query").unwrap();
-    let agg = Some(matches.value_of("aggregation").unwrap());
+    let agg = matches.value_of("aggregation");
     run_search(&index_directory, &query, &agg).map_err(|e| format!("{:?}", e))
 }
 

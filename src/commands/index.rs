@@ -164,27 +164,27 @@ fn index_documents(
     for (doc, doc_size) in doc_receiver {
         index_writer.add_document(doc)?;
 
-        let new = Instant::now();
-        let elapsed_since_last_print = new - last_print;
-
         num_docs_total += 1;
         num_docs += 1;
         num_docs_byte += doc_size;
         num_docs_byte_total += doc_size;
-
-        if elapsed_since_last_print.as_seconds_f32() > 1.0 {
-            println!("{} Docs", num_docs_total);
-            let doc_mb = num_docs_byte as f32 / 1_000_000 as f32;
-            let through_put = doc_mb as f32 / elapsed_since_last_print.as_seconds_f32();
-            println!(
-                "{:.0} docs / hour {:.2} Mb/s",
-                num_docs as f32 * 3600.0 * 1_000_000.0 as f32
-                    / (elapsed_since_last_print.whole_microseconds() as f32),
-                through_put
-            );
-            last_print = new;
-            num_docs_byte = 0;
-            num_docs = 0;
+        if num_docs % 128 == 0 {
+            let new = Instant::now();
+            let elapsed_since_last_print = new - last_print;
+            if elapsed_since_last_print.as_seconds_f32() > 1.0 {
+                println!("{} Docs", num_docs_total);
+                let doc_mb = num_docs_byte as f32 / 1_000_000 as f32;
+                let through_put = doc_mb as f32 / elapsed_since_last_print.as_seconds_f32();
+                println!(
+                    "{:.0} docs / hour {:.2} Mb/s",
+                    num_docs as f32 * 3600.0 * 1_000_000.0 as f32
+                        / (elapsed_since_last_print.whole_microseconds() as f32),
+                    through_put
+                );
+                last_print = new;
+                num_docs_byte = 0;
+                num_docs = 0;
+            }
         }
     }
     let res = index_writer.commit()?;
