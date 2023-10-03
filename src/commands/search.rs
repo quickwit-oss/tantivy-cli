@@ -15,16 +15,16 @@ use tantivy::schema::FieldType;
 use tantivy::{Index, TERMINATED};
 
 pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
-    let index_directory = PathBuf::from(matches.value_of("index").unwrap());
-    let query = matches.value_of("query").unwrap();
-    let agg = matches.value_of("aggregation");
+    let index_directory = PathBuf::from(matches.get_one::<String>("index").unwrap());
+    let query = matches.get_one::<String>("query").unwrap();
+    let agg = matches.get_one::<String>("aggregation");
     run_search(&index_directory, &query, &agg).map_err(|e| format!("{:?}", e))
 }
 
 fn run_search(
     directory: &Path,
     query: &str,
-    agg: &std::option::Option<&str>,
+    agg: &std::option::Option<&String>,
 ) -> tantivy::Result<()> {
     let index = Index::open_in_dir(directory)?;
     let schema = index.schema();

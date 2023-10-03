@@ -17,20 +17,20 @@ use time::Instant;
 use crate::commands::merge::run_merge;
 
 pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
-    let index_directory = PathBuf::from(argmatch.value_of("index").unwrap());
+    let index_directory = PathBuf::from(argmatch.get_one::<String>("index").unwrap());
     let document_source = argmatch
-        .value_of("file")
+        .get_one::<String>("file")
         .map(|path| DocumentSource::FromFile(PathBuf::from(path)))
         .unwrap_or(DocumentSource::FromPipe);
-    let no_merge = argmatch.is_present("nomerge");
-    let force_merge = argmatch.is_present("forcemerge");
-    let mut num_threads = ArgMatches::value_of_t(argmatch, "num_threads")
-        .map_err(|_| format!("Failed to read num_threads argument as an integer."))?;
+    let no_merge = argmatch.contains_id("nomerge");
+    let force_merge = argmatch.contains_id("forcemerge");
+    let mut num_threads: usize = *ArgMatches::get_one(argmatch, "num_threads")
+        .expect("Failed to read num_threads argument as an integer.");
     if num_threads == 0 {
         num_threads = 1;
     }
-    let buffer_size: usize = ArgMatches::value_of_t(argmatch, "memory_size")
-        .map_err(|_| format!("Failed to read the buffer size argument as an integer."))?;
+    let buffer_size: usize = *ArgMatches::get_one(argmatch, "memory_size")
+        .expect("Failed to read the buffer size argument as an integer.");
     let buffer_size_per_thread = buffer_size / num_threads;
     run_index(
         index_directory,

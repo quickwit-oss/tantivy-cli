@@ -1,14 +1,14 @@
 use clap::ArgMatches;
-use tantivy::schema::Schema;
-use tantivy::space_usage::PerFieldSpaceUsage;
 use std::convert::From;
 use std::path::Path;
 use std::path::PathBuf;
 use tantivy;
+use tantivy::schema::Schema;
+use tantivy::space_usage::PerFieldSpaceUsage;
 use tantivy::Index;
 
 pub fn run_inspect_cli(matches: &ArgMatches) -> Result<(), String> {
-    let index_directory = PathBuf::from(matches.value_of("index").unwrap());
+    let index_directory = PathBuf::from(matches.get_one::<String>("index").unwrap());
     run_inspect(&index_directory).map_err(|e| format!("{:?}", e))
 }
 
@@ -28,14 +28,25 @@ fn run_inspect(directory: &Path) -> tantivy::Result<()> {
     let space_usage = searcher.space_usage()?;
     println!("Total bytes: {}", space_usage.total());
     println!("");
-    for (i, (segment_reader, segment_space_usage)) in segments.iter().zip(space_usage.segments().iter()).enumerate() {
+    for (i, (segment_reader, segment_space_usage)) in segments
+        .iter()
+        .zip(space_usage.segments().iter())
+        .enumerate()
+    {
         let section_count = i + 2;
-        println!("{}. Space usage for segment: `{}`", section_count, segment_reader.segment_id().uuid_string());
+        println!(
+            "{}. Space usage for segment: `{}`",
+            section_count,
+            segment_reader.segment_id().uuid_string()
+        );
         println!("==============================================================================");
         println!("Num docs: {}", segment_space_usage.num_docs());
         println!("Store space usage:");
         println!("Total bytes: {}", segment_space_usage.store().total());
-        println!("Offset bytes: {}", segment_space_usage.store().offsets_usage());
+        println!(
+            "Offset bytes: {}",
+            segment_space_usage.store().offsets_usage()
+        );
         println!("");
         println!("{}.1 Term dictionnary space usage", section_count);
         println!("--------------------------------");
@@ -75,6 +86,10 @@ fn print_fields_space_usage(schema: &Schema, per_field_space_usage: &PerFieldSpa
     println!("Total bytes: {}", per_field_space_usage.total());
     for (field, field_space_usage) in per_field_space_usage.fields() {
         let field_name = schema.get_field_name(*field);
-        println!("Field `{}` bytes: {}", field_name, field_space_usage.total());
+        println!(
+            "Field `{}` bytes: {}",
+            field_name,
+            field_space_usage.total()
+        );
     }
 }
