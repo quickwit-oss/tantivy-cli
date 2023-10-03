@@ -9,7 +9,7 @@ fn error_msg(err: tantivy::TantivyError) -> String {
 }
 
 pub fn run_merge_cli(argmatch: &ArgMatches) -> Result<(), String> {
-    let index_directory = PathBuf::from(argmatch.value_of("index").unwrap());
+    let index_directory = PathBuf::from(argmatch.get_one::<String>("index").unwrap());
     run_merge(index_directory).map_err(error_msg)
 
     // we rollback to force a gc.

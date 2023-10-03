@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use clap::{App, AppSettings, Arg};
+use clap::{Arg, Command};
 mod commands;
 pub mod timer;
 use self::commands::*;
@@ -15,18 +15,19 @@ fn main() {
         .help("Tantivy index directory filepath")
         .required(true);
 
-    let cli_options = App::new("Tantivy")
-        .setting(AppSettings::SubcommandRequiredElseHelp)
+    let cli_options = Command::new("Tantivy")
+        .subcommand_required(true)
+        .arg_required_else_help(true)
         .version(env!("CARGO_PKG_VERSION"))
         .author("Paul Masurel <paul.masurel@gmail.com>")
         .about("Tantivy Search Engine's command line interface.")
         .subcommand(
-            App::new("new")
+            Command::new("new")
                 .about("Create a new index. The schema will be populated with a simple example schema")
                 .arg(index_arg.clone())
         )
         .subcommand(
-            App::new("serve")
+            Command::new("serve")
                 .about("Start a server")
                 .arg(index_arg.clone())
                 .arg(Arg::new("host")
@@ -40,10 +41,11 @@ fn main() {
                     .value_name("port")
                     .help("Port")
                     .default_value("localhost")
+                    .value_parser(clap::value_parser!(usize))
                 )
         )
         .subcommand(
-            App::new("index")
+            Command::new("index")
                 .override_help("Index files")
                 .arg(index_arg.clone())
                 .arg(Arg::new("file")
@@ -56,13 +58,15 @@ fn main() {
                     .long("num_threads")
                     .value_name("num_threads")
                     .help("Number of indexing threads. By default num cores - 1 will be used")
-                    .default_value("3"))
+                    .default_value("1")
+                    .value_parser(clap::value_parser!(usize)))
                 .arg(Arg::new("memory_size")
                     .short('m')
                     .long("memory_size")
                     .value_name("memory_size")
                     .help("Total memory_size in bytes. It will be split for the different threads.")
-                    .default_value("1000000000"))
+                    .default_value("1000000000")
+                    .value_parser(clap::value_parser!(usize)))
                 .arg(Arg::new("forcemerge")
                     .long("forcemerge")
                     .help("Merge all the segments at the end of indexing"))
@@ -72,7 +76,7 @@ fn main() {
                     .help("Do not merge segments"))
         )
         .subcommand(
-            App::new("search")
+            Command::new("search")
                 .about("Search an index.")
                 .arg(index_arg.clone())
                 .arg(Arg::new("query")
@@ -89,12 +93,12 @@ fn main() {
                     .required(false))
         )
         .subcommand(
-            App::new("inspect")
+            Command::new("inspect")
                 .about("Inspect an index.")
                 .arg(index_arg.clone())
         )
         .subcommand(
-            App::new("bench")
+            Command::new("bench")
                 .about("Run a benchmark on your index")
                 .arg(index_arg.clone())
                 .arg(Arg::new("queries")
@@ -108,10 +112,11 @@ fn main() {
                     .long("num_repeat")
                     .value_name("num_repeat")
                     .help("Number of times to repeat the benchmark.")
-                    .default_value("1"))
+                    .default_value("1")
+                    .value_parser(clap::value_parser!(usize)))
         )
         .subcommand(
-            App::new("merge")
+            Command::new("merge")
                 .about("Merge all the segments of an index")
                 .arg(index_arg.clone())
         )
