@@ -12,6 +12,7 @@ use tantivy::merge_policy::NoMergePolicy;
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexWriter;
+use tantivy::TantivyDocument;
 use time::Instant;
 
 use crate::commands::merge::run_merge;
@@ -73,7 +74,7 @@ fn run_index(
         let line_receiver_clone = line_receiver.clone();
         thread::spawn(move || {
             for doc_str in line_receiver_clone {
-                match schema_clone.parse_document(&doc_str) {
+                match TantivyDocument::parse_json(&schema_clone, &doc_str) {
                     Ok(doc) => {
                         doc_sender_clone.send((doc, doc_str.len())).unwrap();
                     }
@@ -151,9 +152,9 @@ struct IndexResult {
     num_docs_byte: usize,
 }
 
-fn index_documents(
-    index_writer: &mut IndexWriter,
-    doc_receiver: crossbeam_channel::Receiver<(Document, usize)>,
+fn index_documents<D: Document>(
+    index_writer: &mut IndexWriter<D>,
+    doc_receiver: crossbeam_channel::Receiver<(D, usize)>,
 ) -> tantivy::Result<IndexResult> {
     let mut num_docs_total = 0;
     let mut num_docs = 0;

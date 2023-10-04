@@ -1,6 +1,6 @@
 [package]
 name = "tantivy-cli"
-version = "0.21.0"
+version = "0.22.0"
 authors = ["Paul Masurel <paul.masurel@gmail.com>"]
 
 description = """Command line interface for Tantivy, a search engine library."""
@@ -26,8 +26,8 @@ ansi_term = "0.12"
 urlencoded = "0.6"
 mount = "0.4"
 log = "0.4"
-env_logger = "0.9"
-tantivy = "0.21.0"
+env_logger = "0.10"
+tantivy = { git = "https://github.com/quickwit-oss/tantivy/", rev = "5b1bf1a"}
 crossbeam-channel = "0.5.8"
 
 [[bin]]
