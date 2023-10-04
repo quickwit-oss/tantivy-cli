@@ -36,6 +36,7 @@ use tantivy::schema::Schema;
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexReader;
+use tantivy::TantivyDocument;
 use tantivy::{DocAddress, Score};
 use urlencoded::UrlEncodedQuery;
 
@@ -93,10 +94,10 @@ impl IndexServer {
         })
     }
 
-    fn create_hit(&self, score: Score, doc: &Document, doc_address: DocAddress) -> Hit {
+    fn create_hit<D: Document>(&self, score: Score, doc: D, doc_address: DocAddress) -> Hit {
         Hit {
             score,
-            doc: self.schema.to_named_doc(&doc),
+            doc: doc.to_named_doc(&self.schema),
             id: doc_address.doc_id,
         }
     }
@@ -120,8 +121,8 @@ impl IndexServer {
             top_docs
                 .iter()
                 .map(|(score, doc_address)| {
-                    let doc: Document = searcher.doc(*doc_address).unwrap();
-                    self.create_hit(*score, &doc, *doc_address)
+                    let doc = searcher.doc::<TantivyDocument>(*doc_address).unwrap();
+                    self.create_hit(*score, doc, *doc_address)
                 })
                 .collect()
         };

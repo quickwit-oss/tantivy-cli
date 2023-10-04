@@ -10,6 +10,7 @@ use tantivy::collector::{Count, TopDocs};
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema};
 use tantivy::Index;
+use tantivy::TantivyDocument;
 
 pub fn run_bench_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_path = PathBuf::from(matches.get_one::<String>("index").unwrap());
@@ -92,7 +93,7 @@ fn run_bench(index_path: &Path, query_filepath: &Path, num_repeat: usize) -> Res
             {
                 let _scoped_timer_ = timer.open("total");
                 for (_score, doc_address) in top_docs {
-                    searcher.doc(doc_address).unwrap();
+                    searcher.doc::<TantivyDocument>(doc_address).unwrap();
                 }
             }
             println!("{}\t{}", query_txt, timer.total_time());
