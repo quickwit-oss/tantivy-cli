@@ -27,7 +27,7 @@ urlencoded = "0.6"
 mount = "0.4"
 log = "0.4"
 env_logger = "0.10"
-tantivy = { git = "https://github.com/quickwit-oss/tantivy/", rev = "5b1bf1a"}
+tantivy = "0.22.0"
 crossbeam-channel = "0.5.8"
 
 [[bin]]
