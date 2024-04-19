@@ -42,7 +42,7 @@ use urlencoded::UrlEncodedQuery;
 
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.get_one::<String>("index").unwrap());
-    let port = ArgMatches::get_one(matches, "port").unwrap_or(&3000u16);
+    let port = ArgMatches::get_one(matches, "port").unwrap_or(&3000usize);
     let fallback = "localhost".to_string();
     let host_str = matches.get_one::<String>("host").unwrap_or(&fallback);
     let host = format!("{}:{}", host_str, port);
