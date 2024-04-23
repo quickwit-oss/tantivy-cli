@@ -35,6 +35,8 @@ fn main() {
                     .value_name("host")
                     .default_value("localhost")
                     .help("host to listen to")
+                    .default_value("localhost")
+                    .value_parser(clap::value_parser!(String))
                 )
                 .arg(Arg::new("port")
                     .short('p')
