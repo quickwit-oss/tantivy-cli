@@ -22,20 +22,19 @@ In this tutorial, we will create a brand new index with the articles of English 
 
 There are a couple ways to install `tantivy-cli`.
 
-If you are a Rust programmer, you probably have `cargo` installed and you can just
-run `cargo install tantivy-cli`
+If you are a Rust programmer, you probably have `cargo` installed and you can just:
 
-
+```bash
+cargo install tantivy-cli --locked
+```
 
 ## Creating the index:  `new`
  
 Let's create a directory in which your index will be stored.
 
 ```bash
-    # create the directory
-    mkdir wikipedia-index
+mkdir wikipedia-index
 ```
-
 
 We will now initialize the index and create its schema.
 The [schema](https://quickwit-oss.github.io/tantivy/tantivy/schema/index.html) defines
@@ -62,12 +61,9 @@ Like all the other commands of `tantivy`, you will have to
 pass it your index directory via the `-i` or `--index`
 parameter as follows:
 
-
 ```bash
-    tantivy new -i wikipedia-index
+tantivy new -i wikipedia-index
 ```
-
-
 
 Answer the questions as follows:
 
@@ -154,14 +150,14 @@ The file must contain one JSON object per line.
 The structure of this JSON object must match that of our schema definition.
 
 ```json
-    {"body": "some text", "title": "some title", "url": "http://somedomain.com"}
+{"body": "some text", "title": "some title", "url": "http://somedomain.com"}
 ```
 
 For this tutorial, you can download a corpus with the 5 million+ English Wikipedia articles in the right format here: [wiki-articles.json (2.34 GB)](https://www.dropbox.com/s/wwnfnu441w1ec9p/wiki-articles.json.bz2?dl=0).
 Make sure to decompress the file. Also, you can avoid this if you have `bzcat` installed so that you can read it compressed.
 
 ```bash
-    bunzip2 wiki-articles.json.bz2
+bunzip2 wiki-articles.json.bz2
 ```
 
 If you are in a rush you can [download 100 articles in the right format here (11 MB)](http://fulmicoton.com/tantivy-files/wiki-articles-1000.json).
@@ -171,8 +167,8 @@ By default it will use as 3 thread, each with a buffer size of 1GB split a
 across these threads. 
 
 
-```
-    cat wiki-articles.json | tantivy index -i ./wikipedia-index
+```bash
+cat wiki-articles.json | tantivy index -i ./wikipedia-index
 ```
 
 You can change the number of threads by passing it the `-t` parameter, and the total
@@ -185,7 +181,7 @@ On my computer (8 core Xeon(R) CPU X3450  @ 2.67GHz), on 8 threads, indexing wik
 While tantivy is indexing, you can peek at the index directory to check what is happening.
 
 ```bash
-    ls ./wikipedia-index
+ls ./wikipedia-index
 ```
 
 The main file is `meta.json`.
@@ -203,8 +199,8 @@ merging segments.
 Tantivy's cli also embeds a search server.
 You can run it with the following command.
 
-```
-    tantivy serve -i wikipedia-index
+```bash
+tantivy serve -i wikipedia-index
 ```
 
 By default, it will serve on port `3000`.
@@ -233,17 +229,16 @@ Finally tantivy handle phrase queries.
 You may also use the `search` command to stream all documents matching a specific query.
 The documents are returned in an unspecified order.
 
+```bash
+tantivy search -i wikipedia-index -q "barack obama"
+tantivy search -i hdfs --query "*" --agg '{"severities":{"terms":{"field":"severity_text"}}}'
 ```
-    tantivy search -i wikipedia-index -q "barack obama"
-    tantivy search -i hdfs --query "*" --agg '{"severities":{"terms":{"field":"severity_text"}}}'
-```
-
 
 # Benchmark the index: `bench`
 
 Tantivy's cli provides a simple benchmark tool.
 You can run it with the following command.
 
-```
-    tantivy bench -i wikipedia-index -n 10 -q queries.txt
+```bash
+tantivy bench -i wikipedia-index -n 10 -q queries.txt
 ```
