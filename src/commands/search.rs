@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::process;
 use tantivy::aggregation::agg_req::Aggregations;
 use tantivy::aggregation::AggregationCollector;
-use tantivy::aggregation::AggregationLimits;
+use tantivy::aggregation::AggregationLimitsGuard;
 use tantivy::query::{EnableScoring, QueryParser};
 use tantivy::schema::Field;
 use tantivy::schema::FieldType;
@@ -46,7 +46,7 @@ fn run_search(
     let mut stdout = io::BufWriter::new(io::stdout());
     if let Some(agg) = agg {
         let agg_req: Aggregations = serde_json::from_str(agg).unwrap();
-        let collector = AggregationCollector::from_aggs(agg_req, AggregationLimits::default());
+        let collector = AggregationCollector::from_aggs(agg_req, AggregationLimitsGuard::default());
         let agg_res = searcher.search(&query, &collector).unwrap();
 
         if let Err(e) = writeln!(

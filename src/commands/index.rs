@@ -8,12 +8,12 @@ use std::io::BufReader;
 use std::io::Read;
 use std::path::PathBuf;
 use std::thread;
+use std::time::Instant;
 use tantivy::merge_policy::NoMergePolicy;
 use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexWriter;
 use tantivy::TantivyDocument;
-use time::Instant;
 
 use crate::commands::merge::run_merge;
 
@@ -101,7 +101,7 @@ fn run_index(
     let index_result = index_documents(&mut index_writer, doc_receiver);
     {
         let duration = start_overall - Instant::now();
-        log::info!("Indexing the documents took {} s", duration.whole_seconds());
+        log::info!("Indexing the documents took {} s", duration.as_secs());
     }
 
     match index_result {
@@ -112,7 +112,7 @@ fn run_index(
             let elapsed_before_merge = Instant::now() - start_overall;
 
             let doc_mb = res.num_docs_byte as f32 / 1_000_000_f32;
-            let through_put = doc_mb / elapsed_before_merge.as_seconds_f32();
+            let through_put = doc_mb / elapsed_before_merge.as_secs_f32();
             println!("Total Nowait Merge: {:.2} Mb/s", through_put);
 
             index_writer.wait_merging_threads()?;
@@ -125,7 +125,7 @@ fn run_index(
             let elapsed_after_merge = Instant::now() - start_overall;
 
             let doc_mb = res.num_docs_byte as f32 / 1_000_000_f32;
-            let through_put = doc_mb / elapsed_after_merge.as_seconds_f32();
+            let through_put = doc_mb / elapsed_after_merge.as_secs() as f32;
             println!("Total Wait Merge: {:.2} Mb/s", through_put);
 
             println!("Terminated successfully!");
@@ -133,7 +133,7 @@ fn run_index(
                 let duration = start_overall - Instant::now();
                 log::info!(
                     "Indexing the documents took {} s overall (indexing + merge)",
-                    duration.whole_seconds()
+                    duration.as_secs()
                 );
             }
             Ok(())
@@ -172,14 +172,14 @@ fn index_documents<D: Document>(
         if num_docs % 128 == 0 {
             let new = Instant::now();
             let elapsed_since_last_print = new - last_print;
-            if elapsed_since_last_print.as_seconds_f32() > 1.0 {
+            if elapsed_since_last_print.as_secs() as f32 > 1.0 {
                 println!("{} Docs", num_docs_total);
                 let doc_mb = num_docs_byte as f32 / 1_000_000_f32;
-                let through_put = doc_mb / elapsed_since_last_print.as_seconds_f32();
+                let through_put = doc_mb / elapsed_since_last_print.as_secs() as f32;
                 println!(
                     "{:.0} docs / hour {:.2} Mb/s",
                     num_docs as f32 * 3600.0 * 1_000_000.0_f32
-                        / (elapsed_since_last_print.whole_microseconds() as f32),
+                        / (elapsed_since_last_print.as_micros() as f32),
                     through_put
                 );
                 last_print = new;
