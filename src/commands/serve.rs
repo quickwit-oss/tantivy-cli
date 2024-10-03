@@ -150,7 +150,7 @@ impl fmt::Display for StringError {
 
 impl Error for StringError {
     fn description(&self) -> &str {
-        &*self.0
+        &self.0
     }
 }
 
@@ -163,7 +163,7 @@ fn search(req: &mut Request<'_, '_>) -> IronResult<Response> {
                 status::BadRequest,
             )
         })
-        .and_then(|ref qs_map| {
+        .and_then(|qs_map| {
             let num_hits: usize = qs_map
                 .get("nhits")
                 .and_then(|nhits_str| usize::from_str(&nhits_str[0]).ok())
@@ -185,7 +185,7 @@ fn search(req: &mut Request<'_, '_>) -> IronResult<Response> {
             Ok(Response::with((
                 content_type,
                 status::Ok,
-                format!("{}", resp_json),
+                resp_json.to_string(),
             )))
         })
 }
