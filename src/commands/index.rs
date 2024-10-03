@@ -25,12 +25,12 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
     let no_merge = argmatch.is_present("nomerge");
     let force_merge = argmatch.is_present("forcemerge");
     let mut num_threads = ArgMatches::value_of_t(argmatch, "num_threads")
-        .map_err(|_| format!("Failed to read num_threads argument as an integer."))?;
+        .map_err(|_| "Failed to read num_threads argument as an integer.".to_string())?;
     if num_threads == 0 {
         num_threads = 1;
     }
     let buffer_size: usize = ArgMatches::value_of_t(argmatch, "memory_size")
-        .map_err(|_| format!("Failed to read the buffer size argument as an integer."))?;
+        .map_err(|_| "Failed to read the buffer size argument as an integer.".to_string())?;
     let buffer_size_per_thread = buffer_size / num_threads;
     run_index(
         index_directory,
@@ -110,8 +110,8 @@ fn run_index(
 
             let elapsed_before_merge = Instant::now() - start_overall;
 
-            let doc_mb = res.num_docs_byte as f32 / 1_000_000 as f32;
-            let through_put = doc_mb as f32 / elapsed_before_merge.as_seconds_f32();
+            let doc_mb = res.num_docs_byte as f32 / 1_000_000_f32;
+            let through_put = doc_mb / elapsed_before_merge.as_seconds_f32();
             println!("Total Nowait Merge: {:.2} Mb/s", through_put);
 
             index_writer.wait_merging_threads()?;
@@ -123,8 +123,8 @@ fn run_index(
 
             let elapsed_after_merge = Instant::now() - start_overall;
 
-            let doc_mb = res.num_docs_byte as f32 / 1_000_000 as f32;
-            let through_put = doc_mb as f32 / elapsed_after_merge.as_seconds_f32();
+            let doc_mb = res.num_docs_byte as f32 / 1_000_000_f32;
+            let through_put = doc_mb / elapsed_after_merge.as_seconds_f32();
             println!("Total Wait Merge: {:.2} Mb/s", through_put);
 
             println!("Terminated successfully!");
@@ -173,11 +173,11 @@ fn index_documents(
             let elapsed_since_last_print = new - last_print;
             if elapsed_since_last_print.as_seconds_f32() > 1.0 {
                 println!("{} Docs", num_docs_total);
-                let doc_mb = num_docs_byte as f32 / 1_000_000 as f32;
-                let through_put = doc_mb as f32 / elapsed_since_last_print.as_seconds_f32();
+                let doc_mb = num_docs_byte as f32 / 1_000_000_f32;
+                let through_put = doc_mb / elapsed_since_last_print.as_seconds_f32();
                 println!(
                     "{:.0} docs / hour {:.2} Mb/s",
-                    num_docs as f32 * 3600.0 * 1_000_000.0 as f32
+                    num_docs as f32 * 3600.0 * 1_000_000.0_f32
                         / (elapsed_since_last_print.whole_microseconds() as f32),
                     through_put
                 );
@@ -204,8 +204,8 @@ impl DocumentSource {
     fn read(&self) -> io::Result<BufReader<Box<dyn Read>>> {
         Ok(match self {
             &DocumentSource::FromPipe => BufReader::new(Box::new(io::stdin())),
-            &DocumentSource::FromFile(ref filepath) => {
-                let read_file = File::open(&filepath)?;
+            DocumentSource::FromFile(filepath) => {
+                let read_file = File::open(filepath)?;
                 BufReader::new(Box::new(read_file))
             }
         })

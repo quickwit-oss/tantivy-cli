@@ -28,7 +28,7 @@ fn extract_search_fields(schema: &Schema) -> Vec<Field> {
 }
 
 fn read_query_file(query_path: &Path) -> io::Result<Vec<String>> {
-    let query_file: File = File::open(&query_path)?;
+    let query_file: File = File::open(query_path)?;
     let file = BufReader::new(&query_file);
     let mut queries = Vec::new();
     for line_res in file.lines() {
@@ -58,10 +58,10 @@ fn run_bench(index_path: &Path, query_filepath: &Path, num_repeat: usize) -> Res
     );
 
     println!("SEARCH\n");
-    println!("{}\t{}\t{}", "query", "num hits", "time in microsecs");
+    println!("query\tnum hits\ttime in microsecs");
     for _ in 0..num_repeat {
         for query_txt in &queries {
-            let query = query_parser.parse_query(&query_txt).unwrap();
+            let query = query_parser.parse_query(query_txt).unwrap();
             let mut timing = TimerTree::default();
             let (_top_docs, count) = {
                 let _search = timing.open("search");
@@ -76,10 +76,10 @@ fn run_bench(index_path: &Path, query_filepath: &Path, num_repeat: usize) -> Res
     }
 
     println!("\n\nFETCH STORE\n");
-    println!("{}\t{}", "query", "time in microsecs");
+    println!("query\ttime in microsecs");
     for _ in 0..num_repeat {
         for query_txt in &queries {
-            let query = query_parser.parse_query(&query_txt).unwrap();
+            let query = query_parser.parse_query(query_txt).unwrap();
             let top_docs = searcher
                 .search(&*query, &TopDocs::with_limit(10))
                 .map_err(|e| {
