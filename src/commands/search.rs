@@ -1,5 +1,4 @@
 use clap::ArgMatches;
-use serde_json;
 use std::convert::From;
 use std::io::{self, ErrorKind, Write};
 use std::path::Path;
@@ -19,7 +18,7 @@ pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.get_one::<String>("index").unwrap());
     let query = matches.get_one::<String>("query").unwrap();
     let agg = matches.get_one::<String>("aggregation");
-    run_search(&index_directory, &query, &agg).map_err(|e| format!("{:?}", e))
+    run_search(&index_directory, query, &agg).map_err(|e| format!("{:?}", e))
 }
 
 fn run_search(
@@ -31,7 +30,7 @@ fn run_search(
     let schema = index.schema();
     let default_fields: Vec<Field> = schema
         .fields()
-        .filter(|&(_, ref field_entry)| match *field_entry.field_type() {
+        .filter(|(_, field_entry)| match *field_entry.field_type() {
             FieldType::Str(ref text_field_options) => {
                 text_field_options.get_indexing_options().is_some()
             }
@@ -56,7 +55,7 @@ fn run_search(
             serde_json::to_string_pretty(&agg_res).unwrap()
         ) {
             if e.kind() != ErrorKind::BrokenPipe {
-                eprintln!("{}", e.to_string());
+                eprintln!("{}", e);
                 process::exit(1)
             }
         }
@@ -70,7 +69,7 @@ fn run_search(
                 let named_doc = doc.to_named_doc(&schema);
                 if let Err(e) = writeln!(stdout, "{}", serde_json::to_string(&named_doc).unwrap()) {
                     if e.kind() != ErrorKind::BrokenPipe {
-                        eprintln!("{}", e.to_string());
+                        eprintln!("{}", e);
                         process::exit(1)
                     }
                 }

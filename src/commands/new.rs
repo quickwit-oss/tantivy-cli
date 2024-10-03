@@ -58,9 +58,9 @@ fn prompt_options(msg: &str, codes: Vec<char>) -> char {
         }
         let c = entry.chars().next().unwrap().to_ascii_uppercase();
         if codes.contains(&c) {
-            return Ok(());
+            Ok(())
         } else {
-            return Err(format!("Invalid input. Options are ({})", options));
+            Err(format!("Invalid input. Options are ({})", options))
         }
     };
     let message = format!("{} ({})", msg, options);
@@ -73,9 +73,9 @@ fn prompt_field_type(msg: &str, codes: Vec<&str>) -> tantivy::schema::Type {
     let predicate = |entry: &str| {
         // TODO make case-insensitive, currently has to match the options precisely
         if codes.contains(&entry) {
-            return Ok(());
+            Ok(())
         } else {
-            return Err(format!("Invalid input. Options are ({})", options));
+            Err(format!("Invalid input. Options are ({})", options))
         }
     };
     let message = format!("{} ({})", msg, options);
@@ -159,7 +159,7 @@ fn ask_add_num_field_with_options(
             schema_builder.add_i64_field(field_name, int_options);
         }
         Type::Bool => {
-            schema_builder.add_bool_field(&field_name, int_options);
+            schema_builder.add_bool_field(field_name, int_options);
         }
         _ => {
             // We only pass to this function if the field type is numeric
@@ -285,7 +285,7 @@ fn run_new(directory: PathBuf) -> tantivy::Result<()> {
         }
     }
     let schema = schema_builder.build();
-    let schema_json = format!("{}", serde_json::to_string_pretty(&schema).unwrap());
+    let schema_json = serde_json::to_string_pretty(&schema).unwrap().to_string();
     println!("\n{}\n", Style::new().fg(Green).paint(schema_json));
     match fs::create_dir(&directory) {
         Ok(_) => (),
