@@ -1371,7 +1371,7 @@ dependencies = [
 
 [[package]]
 name = "tantivy-cli"
-version = "0.23.0-dev"
+version = "0.24.0"
 dependencies = [
  "ansi_term",
  "clap",
