@@ -1,3 +1,5 @@
+/// NOT IMPLEMENTED YET
+///
 /// This tantivy command starts a http server (by default on port 3000)
 ///
 /// Currently the only entrypoint is /api/
@@ -12,194 +14,16 @@
 ///
 ///     http://localhost:3000/api/?q=fulmicoton&nhits=20
 ///
-use crate::timer::TimerTree;
 use clap::ArgMatches;
-use iron::mime::Mime;
-use iron::prelude::*;
-use iron::status;
-use iron::typemap::Key;
-use mount::Mount;
-use persistent::Read;
-use serde_derive::Serialize;
 use std::convert::From;
-use std::error::Error;
-use std::fmt::{self, Debug};
-use std::path::Path;
 use std::path::PathBuf;
-use std::str::FromStr;
-use tantivy::collector::{Count, TopDocs};
-use tantivy::query::QueryParser;
-use tantivy::schema::Field;
-use tantivy::schema::FieldType;
-use tantivy::schema::NamedFieldDocument;
-use tantivy::schema::Schema;
-use tantivy::Document;
-use tantivy::Index;
-use tantivy::IndexReader;
-use tantivy::TantivyDocument;
-use tantivy::{DocAddress, Score};
-use urlencoded::UrlEncodedQuery;
 
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
-    let index_directory = PathBuf::from(matches.get_one::<String>("index").unwrap());
+    let _index_directory = PathBuf::from(matches.get_one::<String>("index").unwrap());
     let port = ArgMatches::get_one(matches, "port").unwrap_or(&3000usize);
     let fallback = "localhost".to_string();
     let host_str = matches.get_one::<String>("host").unwrap_or(&fallback);
-    let host = format!("{}:{}", host_str, port);
-    run_serve(index_directory, &host).map_err(|e| format!("{:?}", e))
-}
-
-#[derive(Serialize)]
-struct Serp {
-    q: String,
-    num_hits: usize,
-    hits: Vec<Hit>,
-    timings: TimerTree,
-}
-
-#[derive(Serialize)]
-struct Hit {
-    score: Score,
-    doc: NamedFieldDocument,
-    id: u32,
-}
-
-struct IndexServer {
-    reader: IndexReader,
-    query_parser: QueryParser,
-    schema: Schema,
-}
-
-impl IndexServer {
-    fn load(path: &Path) -> tantivy::Result<IndexServer> {
-        let index = Index::open_in_dir(path)?;
-        let schema = index.schema();
-        let default_fields: Vec<Field> = schema
-            .fields()
-            .filter(|&(_, field_entry)| match field_entry.field_type() {
-                FieldType::Str(ref text_field_options) => {
-                    text_field_options.get_indexing_options().is_some()
-                }
-                _ => false,
-            })
-            .map(|(field, _)| field)
-            .collect();
-        let query_parser =
-            QueryParser::new(schema.clone(), default_fields, index.tokenizers().clone());
-        let reader = index.reader()?;
-        Ok(IndexServer {
-            reader,
-            query_parser,
-            schema,
-        })
-    }
-
-    fn create_hit<D: Document>(&self, score: Score, doc: D, doc_address: DocAddress) -> Hit {
-        Hit {
-            score,
-            doc: doc.to_named_doc(&self.schema),
-            id: doc_address.doc_id,
-        }
-    }
-
-    fn search(&self, q: String, num_hits: usize, offset: usize) -> tantivy::Result<Serp> {
-        let query = self
-            .query_parser
-            .parse_query(&q)
-            .expect("Parsing the query failed");
-        let searcher = self.reader.searcher();
-        let mut timer_tree = TimerTree::default();
-        let (top_docs, num_hits) = {
-            let _search_timer = timer_tree.open("search");
-            searcher.search(
-                &query,
-                &(TopDocs::with_limit(num_hits).and_offset(offset), Count),
-            )?
-        };
-        let hits: Vec<Hit> = {
-            let _fetching_timer = timer_tree.open("fetching docs");
-            top_docs
-                .iter()
-                .map(|(score, doc_address)| {
-                    let doc = searcher.doc::<TantivyDocument>(*doc_address).unwrap();
-                    self.create_hit(*score, doc, *doc_address)
-                })
-                .collect()
-        };
-        Ok(Serp {
-            q,
-            num_hits,
-            hits,
-            timings: timer_tree,
-        })
-    }
-}
-
-impl Key for IndexServer {
-    type Value = IndexServer;
-}
-
-#[derive(Debug)]
-struct StringError(String);
-
-impl fmt::Display for StringError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(self, f)
-    }
-}
-
-impl Error for StringError {
-    fn description(&self) -> &str {
-        &self.0
-    }
-}
-
-fn search(req: &mut Request<'_, '_>) -> IronResult<Response> {
-    let index_server = req.get::<Read<IndexServer>>().unwrap();
-    req.get_ref::<UrlEncodedQuery>()
-        .map_err(|_| {
-            IronError::new(
-                StringError(String::from("Failed to decode error")),
-                status::BadRequest,
-            )
-        })
-        .and_then(|qs_map| {
-            let num_hits: usize = qs_map
-                .get("nhits")
-                .and_then(|nhits_str| usize::from_str(&nhits_str[0]).ok())
-                .unwrap_or(10);
-            let query = qs_map.get("q").ok_or_else(|| {
-                IronError::new(
-                    StringError(String::from("Parameter q is missing from the query")),
-                    status::BadRequest,
-                )
-            })?[0]
-                .clone();
-            let offset: usize = qs_map
-                .get("offset")
-                .and_then(|offset_str| usize::from_str(&offset_str[0]).ok())
-                .unwrap_or(0);
-            let serp = index_server.search(query, num_hits, offset).unwrap();
-            let resp_json = serde_json::to_string_pretty(&serp).unwrap();
-            let content_type = "application/json".parse::<Mime>().unwrap();
-            Ok(Response::with((
-                content_type,
-                status::Ok,
-                resp_json.to_string(),
-            )))
-        })
-}
-
-fn run_serve(directory: PathBuf, host: &str) -> tantivy::Result<()> {
-    let mut mount = Mount::new();
-    let server = IndexServer::load(&directory)?;
-
-    mount.mount("/api", search);
-
-    let mut middleware = Chain::new(mount);
-    middleware.link(Read::<IndexServer>::both(server));
-
-    println!("listening on http://{}", host);
-    Iron::new(middleware).http(host).unwrap();
-    Ok(())
+    let _host = format!("{host_str}:{port}");
+    // TODO
+    unimplemented!("Serve command is not implemented yet");
 }
