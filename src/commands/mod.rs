@@ -1,5 +1,6 @@
 mod bench;
 mod index;
+mod infer_schema;
 mod inspect;
 mod merge;
 mod new;
