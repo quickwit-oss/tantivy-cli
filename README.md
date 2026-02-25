@@ -29,7 +29,7 @@ cargo install tantivy-cli --locked
 ```
 
 ## Creating the index:  `new`
- 
+
 Let's create a directory in which your index will be stored.
 
 ```bash
@@ -53,6 +53,9 @@ In our case, our documents will contain
 
 We want the title and the body to be tokenized and indexed. We also want 
 to add the term frequency and term positions to our index.
+
+Note: You can also infer them from a sample of your documents (`tantivy new -i wikipedia-index --infer-from-ndjson wiki-articles.jsonl`),
+but in this tutorial we will create the schema manually.
 
 Running `tantivy new` will start a wizard that will help you
 define the schema of the new index.
