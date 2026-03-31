@@ -113,7 +113,12 @@ impl IndexServer {
             let _search_timer = timer_tree.open("search");
             searcher.search(
                 &query,
-                &(TopDocs::with_limit(num_hits).and_offset(offset), Count),
+                &(
+                    TopDocs::with_limit(num_hits)
+                        .and_offset(offset)
+                        .order_by_score(),
+                    Count,
+                ),
             )?
         };
         let hits: Vec<Hit> = {

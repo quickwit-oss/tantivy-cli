@@ -67,7 +67,7 @@ fn run_bench(index_path: &Path, query_filepath: &Path, num_repeat: usize) -> Res
             let (_top_docs, count) = {
                 let _search = timing.open("search");
                 searcher
-                    .search(&query, &(TopDocs::with_limit(10), Count))
+                    .search(&query, &(TopDocs::with_limit(10).order_by_score(), Count))
                     .map_err(|e| {
                         format!("Failed while searching query {:?}.\n\n{:?}", query_txt, e)
                     })?
@@ -82,7 +82,7 @@ fn run_bench(index_path: &Path, query_filepath: &Path, num_repeat: usize) -> Res
         for query_txt in &queries {
             let query = query_parser.parse_query(query_txt).unwrap();
             let top_docs = searcher
-                .search(&*query, &TopDocs::with_limit(10))
+                .search(&*query, &TopDocs::with_limit(10).order_by_score())
                 .map_err(|e| {
                     format!(
                         "Failed while retrieving document for query {:?}.\n{:?}",

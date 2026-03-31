@@ -81,14 +81,13 @@ fn run_inspect(directory: &Path) -> tantivy::Result<()> {
     Ok(())
 }
 
-fn print_fields_space_usage(schema: &Schema, per_field_space_usage: &PerFieldSpaceUsage) {
+fn print_fields_space_usage(_schema: &Schema, per_field_space_usage: &PerFieldSpaceUsage) {
     println!("Total bytes: {}", per_field_space_usage.total());
-    for (field, field_space_usage) in per_field_space_usage.fields() {
-        let field_name = schema.get_field_name(*field);
+    for field_usage in per_field_space_usage.fields() {
         println!(
             "Field `{}` bytes: {}",
-            field_name,
-            field_space_usage.total()
+            field_usage.field_name(),
+            field_usage.total()
         );
     }
 }
